@@ -8,65 +8,13 @@ tags:
   - scala3
   - metaprogramming
   - scala
---- 
+---
+
+<style type="text/css">
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital@1&display=swap');
+</style> 
 
 # Mirror, mirror on the Wall, Who's the Genericioust of Them All? - Generic Programming with Scala 3
-
-## The tale of Princess Dotty and brave knight Jon
-
-Once upon a time in the land of Scala there lived brave knight Sir Jon, also called The Pretty. He fought for the rights
-of the poor Types, that were ruled by the evil queen of reflection. The queen would throw the Types in the river of Runtime
-by even the slightest approach to derive their freedom and flee back to their homeland, the land of Compiletime. 
-Jon the knight knew, that a direct fight with the queen would create a lot of logs or even summon the queens feared demons, 
-also called "The Exceptions". So he came up with a smart plan: On the foundations of the isle M'Sabin that was hidden from
-the evil queen behind shapeless clouds he built the library of Magnolia where he taught each Type to construct an instance
-to fight against the queen. Jons comrades in arms, the beautiful Circe and the wise animal Tapir twittered the wise words
-all around the community, so that each Type implicitly learned to summon its birth given instance. But Jons plan had a 
-weakness. When the queen became aware of Jons plan to start a revolution she casted the curse of Compile on the land 
-that would terribly slow down anyType trying to summon its instance, which caused lots of downtime. When Jon became 
-aware of the curse he desperatelysearched a cure for the queens curse. His old friend, the wizard M'acro would have been
-able to break the curse, but the reign of the queen had exhausted his power and he was approaching his last days in the 
-2nd age of Scala.Jon didn't knew what to do and was close to giving up when a small primitive Type named Int approached 
-him to share therumours of the prophecy of Odersky. The prophecy was about a long forgotten bloodline and its descendant,
-the young princess Dotty. It foretold that at the beginning of the 3rd age princess Dotty would appear to free all 
-Types from the queen of reflection. Jon traveled through the whole country, even behind the valleys of typelevel, to 
-eventually find princess Dotty which lived in the shadows of mountain E'pfl. Princess Dotty, who was not aware of her 
-role in the prophecy was surprised that the well known knight Jon asked her for help but after Jon told her she began to
-smile. Her mother Java had given her a magic Mirror before she passed away. Java told young Dotty that everyone looking 
-in the mirror will see ones soul broken down into its individual parts, so they can face their real self, as good or as
-evil like it is. Jon and Dotty then made up a plan to have an audience with the queen, pretending to surrender. They 
-would then give the queen Dottys mirror as a present to ask the queen to spare them. The queen then, in the euphoria
-of victory opened the present, when the mirror immediately released its fury. The queen was shaken by the sad sight of 
-her soul and she screamed as she realized that Dotty and Jon had tricked her. The magic of the Mirror let her fall
-into a deep sleep. Jon and Dotty then put the queen into a Future-Box so that she could no longer access the 
-river of Runtime. Now all Types were free and could go back to the land of compiletime, but something was missing. 
-The land had dried over time and Jon, Dotty and the Types were searching for water in the valleys and on the hills with
-no success. After three days the queen, still trapped inside the Future-Box, slightly began to glow. The magic sleep 
-seemed to heal the broken parts of the queens soul. Suddenly little Int screamed with joy: He remembered that in the 
-prophecy of Odersky the magic mirror was said to invert the queens soul. She was foreseen to become the queen of mirrors.
-The queen, woken up by little Ints scream, slowly the queen began to speak: "You freed me
-from my own curse, princess Dotty and Sir Jon. I know that the Types want to live in a blooming land and so may it be.
-The river of Runtime needs to flow through the land of compiletime to let the Empire of Programming bloom again." - 
-"Yeah, sure" said Sir Jon and laughed. "How could we forget about that?". Then the Types broke the old dam that held back
-the river of runtime and it released its refreshing energy into the land of compiletime. Dotty then freeded the queen
-and they celebrated a big party with Jon and the Types. And they lived happily ever after, without any exceptions. 
-
-Curse of Macro
-shapeless clouds
-generic empire
-bibliothecarian tapir
-typelevel cats
-Princess dotty sealed the traits
-Jon's beautiful words formed a PrettyString.
-Jon - mit oder ohne H  
-The types were standing inline, transparently tupling up to whole case classes. 
-Isle M'Sabin <=> Ebene von Typelevel 
-river of runtime vanishing in the hole of logs
-The types could escape, with no exception.
-queen 
-Release the fury       
-Queen of reflection becomes rechtschaffene Queen of mirrors
-Sir Jon, the knight of the long forgotten Kingdom of Generics    
 
 Scala 3 (previously called [dotty](https://dotty.epfl.ch/)) is approaching its [release](https://dotty.epfl.ch/blog/2020/09/21/naming-schema-change.html)!
 This is a good opportunity to have a deeper look on some new features that it offers. For me one of the most exiting
@@ -74,21 +22,75 @@ features are the new metaprogramming abilities that scala 3 offers. Did you ever
 codecs for you from case classes and sealed traits? Or how tapir generates a whole OpenAPI documentation from your 
 endpoint definitions?
 
+But before we start let me tell you the tale of princess Dotty. If you aren't into tales you may want to immediately 
+get your hands dirty by [jumping into the technical](TODO) part of the post. 
+
+<section style="font-family: 'Lora', serif;">
+## The tale of Princess Dotty and Sir Jon
+
+Once upon a time in the land of Scala there lived brave knight Sir Jon, also called [The Pretty](https://twitter.com/propensive). He fought for the rights
+of the poor Types, that were ruled by the evil queen of reflection. The queen would throw the Types in the river of Runtime
+by even the slightest approach to derive their birth given instances and flee back to their home, the kingdom of [Compiletime](https://dotty.epfl.ch/docs/reference/metaprogramming/inline.html#the-scalacompiletime-package). 
+Sir Jon knew, that a direct fight with the queen would create a lot of logs or even summon the queens feared demons, 
+also called "The Exceptions". So he came up with a smart plan: On the foundations of the [isle M'Sabin](https://twitter.com/milessabin) that was hidden from
+the evil queen behind [shapeless](https://github.com/milessabin/shapeless) clouds he built the library of [Magnolia](https://github.com/propensive/magnolia) where he taught each Type to construct an instance
+to fight against the queen. Jons comrades in arms, the beautiful [Circe](https://github.com/circe/circe) and the 
+librarian [Tapir](https://tapir.softwaremill.com/) twittered the wise words
+all around the community, so that each Type [implicitly learned to summon](http://dotty.epfl.ch/docs/reference/contextual/using-clauses.html) 
+its birth [given instance](http://dotty.epfl.ch/docs/reference/contextual/givens.html). But Jons plan had a 
+weakness. When the queen became aware of Jons plan to start a revolution she casted the curse of Compile on the land 
+that would terribly slow down any Type trying to summon its instance, which caused lots of downtime. When Jon sensed 
+the curse he desperately began to search for a cure. His old friend, the wizard [M'acro](http://dotty.epfl.ch/docs/reference/dropped-features/macros.html) would have been
+able to break the curse, but the reign of the queen had exhausted his power, and he was approaching his last days in the 
+2nd age of Scala. Jon didn't knew what to do and was close to giving up when a small primitive Type named Int approached 
+him to share the rumours of the prophecy of [Odersky](https://twitter.com/odersky). The prophecy was about a long forgotten bloodline and its descendant,
+young princess [Dotty](https://dotty.epfl.ch/). It foretold that at the beginning of the 3rd age princess Dotty would appear to free all 
+Types from the evil queen of reflection. Jon traveled the whole country, even behind the valleys of [typelevel](https://typelevel.org/), to 
+eventually find princess Dotty which lived in the shadows of mountain [E'pfl](https://scala.epfl.ch/). Princess Dotty, who was not aware of her 
+role in the prophecy, was surprised that the well-known knight Jon asked her for help but after Jon told her about the prophecy she began to
+smile. Her mother Java had given her a magic mirror before she passed away. Java told young Dotty that everyone looking 
+in the mirror will see ones soul broken down into its individual parts, so they have to face their real self, as good or as
+evil like it is. Jon and Dotty then made up a plan to speak up at the next audience of the queen, pretending to surrender. 
+They went there and gave the queen Dottys mirror as a gift to soothe her. The queen then, in the euphoria
+of victory unwrapped the gift, when at the first blink the mirror immediately released its [fury](https://github.com/propensive/fury). The queen was shaken by 
+her own reflection and she screamed in agony as she realized that Dotty and Jon had tricked her. The magic of the mirror quickly let her fall
+into a deep sleep. Jon and Dotty imprisoned the queen in a trifold [IO-Monad](https://zio.dev/) guarded by the mystic [Cats](https://typelevel.org/cats-effect) of [Monix](https://monix.io/) so that she could no 
+longer access the river of Runtime. Now all Types were free and could go back to the kingdom of Compiletime. 
+But as they approached the border, they realized that the land had dried over time. Sir Jon, Dotty and the Types started searching
+for the [stream](https://fs2.io/) that had once fed them and the [Alp](https://doc.akka.io/docs/alpakka/current/index.html) [akkas](https://akka.io/) nearby. 
+After three days of search, thirsty and exhausted, Dotty all of a sudden 
+noticed that the queen, still trapped inside the IO-Monad, slightly started to glow. The magic sleep 
+seemed to heal the broken parts of the queens soul. Suddenly little Int screamed with joy: He remembered that in the 
+prophecy of Odersky the magic mirror was said to invert the queens soul. She was foreseen to become the queen of [mirrors](http://dotty.epfl.ch/docs/reference/contextual/derivation.html)!
+The queen, woken up by little Ints scream, slowly began to speak in a deep voice: "You freed me
+from my own curse, princess Dotty and Sir Jon. I know that the Types want to live in a flourishing land and so may it be.
+You need to release the river of Runtime to again flow through the kingdom to enter the era of generic programming." - 
+"Yeah, sure" said Sir Jon and laughed. "How could we forget about that?". Then the Types broke the old dam that held back
+the river of runtime and it released its refreshing energy into the kingdom of Compiletime. Dotty then freed the queen
+and they celebrated a big party with Jon and the Types under the beats of [DJ Caliban](https://github.com/ghostdogpr/caliban) 
+where they drank a lot of [sangria](https://sangria-graphql.github.io/) 
+and ate many [burritos](https://emorehouse.wescreates.wesleyan.edu/silliness/burrito_monads.pdf). Dotty had finally 
+[unioned](http://dotty.epfl.ch/docs/reference/new-types/union-types.html) all Types under the righteous queen of mirrors like the prophecy of 
+Odersky foresaw. And they lived in [equality](http://dotty.epfl.ch/docs/reference/contextual/multiversal-equality.html) happily ever after, without any exceptions.
+
+</section> 
+
+// TODO: Überleitung
+
 These libraries do that by deriving typeclasses, which provide a defined set of functionality for a given data type. 
 For example a json codec or an API description. In scala 2 this was only possible by using macros and more or less 
 complex constructs which can lead to very long compile times. Also scala 2 macros will not be supported anymore in scala 3.
 
 Instead, scala 3 offers us builtin tools to achieve what was done with macros before, which will hopefully also lead to 
-better IDE support for derivation and faster compile times.
+better IDE support and faster compile times.
 
 In this blogpost we will step by step look into how to derive a custom typeclass for any data type and also provide a 
 powerful tool to do that derivation by just implementing some simple functions.
 
-## The Tuple <=> Case Class duality and Typeclasses 
+## The Tuple <=> Case Class duality and Typeclasses TODO: typelevel strings
 
-Before we start let us have a look at the underlying concepts. 
-
-When looking at any case class we can also describe that case class by breaking it down into its fields and represent it as a tuple as shown below.
+Lets first check the underlying concepts. When looking at any case class we can also describe that case class by 
+breaking it down into its fields and represent it as a tuple as shown below.
 
 ```scala
 case class User(name: String, age: Int) 
@@ -100,7 +102,7 @@ So a case class is just a tuple with some labels and it's own type. But in terms
 which in this case are values of type String and Int, there is no difference between a tuple and a case class. 
 That means that we can also describe a case class by a tuple with some labels, which will be important later.
 
-The second important concept is that of typeclasses. Let's look at a simple typeclass for that we will implement the generic derivation later:
+The second important concept is that of typeclasses. Let's look at a simple typeclass:
 
 ```scala
 trait PrettyString[A] {
@@ -108,8 +110,12 @@ trait PrettyString[A] {
 }
 ```
 
+The `PrettyString` typeclass provides us with the ability to convert any type to a string, which is similar to what
+the `.toString` method does, but we will do it in a more pretty way, e.g. also print the fieldnames of case classes, 
+wrap strings in quotes etc.
+
 Every typeclass is characterized by a generic type parameter `A` and some functions or values that it 
-provides (in our case `def prettyString`). The typeclass can then be used to implement instances for any type:
+provides (in our case `def prettyString`). The typeclass can then be used to implement instances for arbitrary types:
 
 ```scala
 val intPrettyString = 
@@ -130,7 +136,7 @@ val userPrettyString =
 
 println(intPrettyString.prettyString(5)) // prints 5
 println(stringPrettyString.prettyString("hello world")) // prints "hello world"
-println(userPrettyString.prettyString(User("Bob", 25"))) // prints User(name="Bob", age=25)
+println(userPrettyString.prettyString(User("Bob", 25))) // prints User(name="Bob", age=25)
 ``` 
 
 So by defining the instances `intPrettyString`, `stringPrettyString` and `userPrettyString` we did provide the ability 
@@ -138,21 +144,42 @@ to pretty print the types `Int`, `String` and `User`. What is also shown is that
 (manually) derived from the instances for primitive types `Int` and `String`. In the end we will see how to do the 
 derivation automatically for any case class or sealed trait by using scala 3 tools.
 
+# TODO
+
+As shown above we did create a typeclass instance for `User` by hand but in scala 2 the libraries could to that 
+automatically by using macros (e.g. circe for json codecs or tapir for api descriptions). 
+
+In Scala 2 the libraries used macros to achieve the automatic derivation from case classes or sealed traits which often 
+slowed down compile times and was difficult to implement. Magnolia, a library for generic derivation made that a lot 
+easier but it still depends on scala 2 macros which will no longer be supported in scala 3.
+
+To our rescue scala 3 has builtin derivation utilities. In the section below we will discover how to derive a typeclass
+instance for our `PrettyString` typeclass for any case class or sealed trait.
+
 ## A look in the Mirror
 
+The tool that scala 3 provides us with that will allow us to do the derivation is the Mirror trait:
 
-  
-In Scala 2 macros were needed to derive typeclasses (e.g. to automatically create a json codec) from case classes or 
-sealed traits which was often cumbersome and slowed down compile times. Magnolia, a library for generic derivation made 
-that a lot easier but it still depends on macros which will no longer be supported in scala 3.
+```scala
+// taken from https://dotty.epfl.ch/docs/reference/contextual/derivation.html
 
-To our rescue scala 3 provides us with such abilities with builtin tools. In this blog post we will discover how to
-derive a typeclass from data classes. 
+// shortened
+sealed trait Mirror {
+  type MirroredType // the type that was mirrored itself
+  type MirroredLabel <: String // the label of the mirrored type
+  type MirroredElemTypes <: Tuple // a tuple of types for each individual element
+  type MirroredElemLabels <: Tuple // a tuple of the labels for each individual element
+}
+```
+
+Ok, that's a lot of types. First thing to notice is that `Mirror` is providing us with *typelevel* information only. 
+Which makes sense, as the derivation of the typeclass happens at compiletime.
+
+
 
 Before we start let me introduce to you the concept of product-types and sum-types. Most likely you already know them 
 by different names. Ever heard of case classes and sealed traits? Case classes represent product types and sealed 
 traits are sum types. 
-
 
 With Scala 3 (or [dotty](https://dotty.epfl.ch/)) approaching its [release](https://dotty.epfl.ch/blog/2020/09/21/naming-schema-change.html)
 let's have a look at one of the new features: Mirror
