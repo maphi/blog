@@ -33,7 +33,7 @@ of the poor Types, that were ruled by the evil queen of reflection. The queen wo
 by even the slightest approach to derive their birth given instances and flee back to their home, the kingdom of [Compiletime](https://dotty.epfl.ch/docs/reference/metaprogramming/inline.html#the-scalacompiletime-package). 
 Sir Jon knew, that a direct fight with the queen would create a lot of logs or even summon the queens feared demons, 
 also called "The Exceptions". So he came up with a smart plan: On the foundations of the [isle M'Sabin](https://twitter.com/milessabin) that was hidden from
-the evil queen behind [shapeless](https://github.com/milessabin/shapeless) clouds he built the library of [Magnolia](https://github.com/propensive/magnolia) where he taught each Type to construct an instance
+the evil queen behind [shapeless](https://github.com/milessabin/shapeless) clouds he built the library [Magnolia](https://github.com/propensive/magnolia) where he taught each Type to construct an instance
 to fight against the queen. Jons comrades in arms, the beautiful [Circe](https://github.com/circe/circe) and the 
 librarian [Tapir](https://tapir.softwaremill.com/) twittered the wise words
 all around the community, so that each Type [implicitly learned to summon](http://dotty.epfl.ch/docs/reference/contextual/using-clauses.html) 
@@ -45,14 +45,14 @@ able to break the curse, but the reign of the queen had exhausted his power, and
 2nd age of Scala. Jon didn't knew what to do and was close to giving up when a small primitive Type named Int approached 
 him to share the rumours of the prophecy of [Odersky](https://twitter.com/odersky). The prophecy was about a long forgotten bloodline and its descendant,
 young princess [Dotty](https://dotty.epfl.ch/). It foretold that at the beginning of the 3rd age princess Dotty would appear to free all 
-Types from the evil queen of reflection. Jon traveled the whole country, even behind the valleys of [typelevel](https://typelevel.org/), to 
+Types from the queen. Jon traveled the whole country, even behind the valleys of [typelevel](https://typelevel.org/), to 
 eventually find princess Dotty which lived in the shadows of mountain [E'pfl](https://scala.epfl.ch/). Princess Dotty, who was not aware of her 
-role in the prophecy, was surprised that the well-known knight Jon asked her for help but after Jon told her about the prophecy she began to
+role in the prophecy, was surprised that the well-known knight Jon asked her for help but after Jon told her the story she began to
 smile. Her mother Java had given her a magic mirror before she passed away. Java told young Dotty that everyone looking 
 in the mirror will see ones soul broken down into its individual parts, so they have to face their real self, as good or as
 evil like it is. Jon and Dotty then made up a plan to speak up at the next audience of the queen, pretending to surrender. 
 They went there and gave the queen Dottys mirror as a gift to soothe her. The queen then, in the euphoria
-of victory unwrapped the gift, when at the first blink the mirror immediately released its [fury](https://github.com/propensive/fury). The queen was shaken by 
+of victory, unwrapped the gift, when at the first blink the mirror immediately released its [fury](https://github.com/propensive/fury). The queen was shaken by 
 her own reflection and she screamed in agony as she realized that Dotty and Jon had tricked her. The magic of the mirror quickly let her fall
 into a deep sleep. Jon and Dotty imprisoned the queen in a trifold [IO-Monad](https://zio.dev/) guarded by the mystic [Cats](https://typelevel.org/cats-effect) of [Monix](https://monix.io/) so that she could no 
 longer access the river of Runtime. Now all Types were free and could go back to the kingdom of Compiletime. 
@@ -60,7 +60,7 @@ But as they approached the border, they realized that the land had dried over ti
 for the [stream](https://fs2.io/) that had once fed them and the [Alp](https://doc.akka.io/docs/alpakka/current/index.html) [akkas](https://akka.io/) nearby. 
 After three days of search, thirsty and exhausted, Dotty all of a sudden 
 noticed that the queen, still trapped inside the IO-Monad, slightly started to glow. The magic sleep 
-seemed to heal the broken parts of the queens soul. Suddenly little Int screamed with joy: He remembered that in the 
+seemed to heal the broken parts of the queens soul. TODO: Suddenly little Int screamed with joy: He remembered that in the 
 prophecy of Odersky the magic mirror was said to invert the queens soul. She was foreseen to become the queen of [mirrors](http://dotty.epfl.ch/docs/reference/contextual/derivation.html)!
 The queen, woken up by little Ints scream, slowly began to speak in a deep voice: "You freed me
 from my own curse, princess Dotty and Sir Jon. I know that the Types want to live in a flourishing land and so may it be.
@@ -87,7 +87,7 @@ better IDE support and faster compile times.
 In this blogpost we will step by step look into how to derive a custom typeclass for any data type and also provide a 
 powerful tool to do that derivation by just implementing some simple functions.
 
-## The Tuple <=> Case Class duality and Typeclasses TODO: typelevel strings
+## The Tuple <=> Case Class duality and Typeclasses TODO: typelevel strings, HLists
 
 Lets first check the underlying concepts. When looking at any case class we can also describe that case class by 
 breaking it down into its fields and represent it as a tuple as shown below.
@@ -215,8 +215,55 @@ val userMirror: Product = new Product with Mirror {
   type MirroredElemLabels = ("name", "age")
 } 
 ```
+
+Ok that doesn't look to complicated. We have all the information in place that we would need to automatically 
+derive the `PrettyString` instance for `User`. But the information is still at the type level. We need to bring it to 
+the value level to work with it at runtime. Let's start with the label of the type itself:
+
+```scala
+import scala.compiletime.constValue
+
+// get the type label from a mirror
+def labelFromMirror(m: Mirror): String = constValue[m.MirroredLabel]
+
+println(labelFromMirror(userMirror)) // prints User
+```
+
+This was pretty easy. We just pass our `labelFromMirror` the mirror as an argument and it will use the `constValue` 
+function that we discussed before to summon the value from the type level. 
+
+Summoning the element labels is a little bit more tricky. As it is a tuple we need to deconstruct it step by step
+and create a simple `List[String]` out of that by using a recursive function:
+
+```scala
+import scala.compiletime.erasedValue
+
+def summonElemLabels[A <: Tuple]: List[String] = erasedValue[A] match {
+  case _: EmptyTuple => Nil // stop condition - the tuple is empty
+  case _: (t *: ts) => 
+    val headElementLabel = constValue[t].toString // bring the head label to value space
+    val tailElementLabels = summonElemLabels[ts] // recursive call to summon the labels from the tail
+}
+
+val userElementLabels = summonElemLabels[userMirror.MirroredElemLabels] // List("name", "age")
+```
+
+The interesting thing here is the trick with the `erasedValue` function. This allows us to create a **virtual** instance 
+of the type `A` and match on it. Virtual means that this is done at compiletime and there is no actual value, but it
+still allows us to match on the type and deconstruct the tuple step by step.
+
+
+
+
+TODO: reference dotty docs
+TODO: function => method
+
  
- **********************************
+******************************************************************************************************
+******************************************************************************************************
+******************************************************************************************************
+******************************************************************************************************
+******************************************************************************************************
 
 Before we start let me introduce to you the concept of product-types and sum-types. Most likely you already know them 
 by different names. Ever heard of case classes and sealed traits? Case classes represent product types and sealed 
