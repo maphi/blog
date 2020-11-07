@@ -175,7 +175,48 @@ sealed trait Mirror {
 Ok, that's a lot of types. First thing to notice is that `Mirror` is providing us with *typelevel* information only. 
 Which makes sense, as the derivation of the typeclass happens at compiletime.
 
+So what do the different types mean:
 
+ - `MirroredType` - is just the type we are deriving from, e.g. our case class `User`
+ - `MirroredLabel` - typelevel representation of the label of the type we mirror, so the string `"User"`
+ - `MirroredElemTypes` - A tuple of all elements that `User` can be broken into: `(String, Int)` (for fields name and age)
+ - `MirroredElemLabels` - A Tuple that contains the member names at typelevel, so of type `("name", "age")`
+ 
+Now we've got some useful things, like the labels and the types of the individual elements that our type consist of. 
+But we still need some extra information if our type is a case class or a sealed trait. 
+ 
+Thankfully two traits extend `Mirror` which are:
+ 
+ ```scala
+// represents a case class
+trait Product extends Mirror {
+ def fromProduct(p: scala.Product): MirroredType
+}
+
+// represents a sealed trait
+trait Sum extends Mirror { self =>
+ def ordinal(x: MirroredMonoType): Int
+}
+ ```
+ 
+Yay, we can distinguish between case classes and sealed traits! A small site note: Case classes are also called product
+types and sealed traits sum types (hence the naming of the traits). Also we've got some methods that we can call at
+runtime: For `Product` a method to assemble the type from its elements and for `Sum` one that gives us the 
+ordinal of a member of the respective sealed trait.
+
+Let's now recheck how the Mirror type would look like for our `User` case class leaving out the `fromProduct` 
+method which is not relevant for now.
+
+```scala
+val userMirror: Product = new Product with Mirror {
+  type MirroredType = User
+  type MirroredLabel = "User"
+  type MirroredElemTypes = (String, Int)
+  type MirroredElemLabels = ("name", "age")
+} 
+```
+ 
+ **********************************
 
 Before we start let me introduce to you the concept of product-types and sum-types. Most likely you already know them 
 by different names. Ever heard of case classes and sealed traits? Case classes represent product types and sealed 
