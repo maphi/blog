@@ -8,7 +8,65 @@ tags:
   - scala3
   - metaprogramming
   - scala
----Ever wondered how the scala json libraries derive 
+--- 
+
+# Mirror, mirror on the Wall, Who's the Genericioust of Them All? - Generic Programming with Scala 3
+
+## The tale of Princess Dotty and brave knight Jon
+
+Once upon a time in the land of Scala there lived brave knight Sir Jon, also called The Pretty. He fought for the rights
+of the poor Types, that were ruled by the evil queen of reflection. The queen would throw the Types in the river of Runtime
+by even the slightest approach to derive their freedom and flee back to their homeland, the land of Compiletime. 
+Jon the knight knew, that a direct fight with the queen would create a lot of logs or even summon the queens feared demons, 
+also called "The Exceptions". So he came up with a smart plan: On the foundations of the isle M'Sabin that was hidden from
+the evil queen behind shapeless clouds he built the library of Magnolia where he taught each Type to construct an instance
+to fight against the queen. Jons comrades in arms, the beautiful Circe and the wise animal Tapir twittered the wise words
+all around the community, so that each Type implicitly learned to summon its birth given instance. But Jons plan had a 
+weakness. When the queen became aware of Jons plan to start a revolution she casted the curse of Compile on the land 
+that would terribly slow down anyType trying to summon its instance, which caused lots of downtime. When Jon became 
+aware of the curse he desperatelysearched a cure for the queens curse. His old friend, the wizard M'acro would have been
+able to break the curse, but the reign of the queen had exhausted his power and he was approaching his last days in the 
+2nd age of Scala.Jon didn't knew what to do and was close to giving up when a small primitive Type named Int approached 
+him to share therumours of the prophecy of Odersky. The prophecy was about a long forgotten bloodline and its descendant,
+the young princess Dotty. It foretold that at the beginning of the 3rd age princess Dotty would appear to free all 
+Types from the queen of reflection. Jon traveled through the whole country, even behind the valleys of typelevel, to 
+eventually find princess Dotty which lived in the shadows of mountain E'pfl. Princess Dotty, who was not aware of her 
+role in the prophecy was surprised that the well known knight Jon asked her for help but after Jon told her she began to
+smile. Her mother Java had given her a magic Mirror before she passed away. Java told young Dotty that everyone looking 
+in the mirror will see ones soul broken down into its individual parts, so they can face their real self, as good or as
+evil like it is. Jon and Dotty then made up a plan to have an audience with the queen, pretending to surrender. They 
+would then give the queen Dottys mirror as a present to ask the queen to spare them. The queen then, in the euphoria
+of victory opened the present, when the mirror immediately released its fury. The queen was shaken by the sad sight of 
+her soul and she screamed as she realized that Dotty and Jon had tricked her. The magic of the Mirror let her fall
+into a deep sleep. Jon and Dotty then put the queen into a Future-Box so that she could no longer access the 
+river of Runtime. Now all Types were free and could go back to the land of compiletime, but something was missing. 
+The land had dried over time and Jon, Dotty and the Types were searching for water in the valleys and on the hills with
+no success. After three days the queen, still trapped inside the Future-Box, slightly began to glow. The magic sleep 
+seemed to heal the broken parts of the queens soul. Suddenly little Int screamed with joy: He remembered that in the 
+prophecy of Odersky the magic mirror was said to invert the queens soul. She was foreseen to become the queen of mirrors.
+The queen, woken up by little Ints scream, slowly the queen began to speak: "You freed me
+from my own curse, princess Dotty and Sir Jon. I know that the Types want to live in a blooming land and so may it be.
+The river of Runtime needs to flow through the land of compiletime to let the Empire of Programming bloom again." - 
+"Yeah, sure" said Sir Jon and laughed. "How could we forget about that?". Then the Types broke the old dam that held back
+the river of runtime and it released its refreshing energy into the land of compiletime. Dotty then freeded the queen
+and they celebrated a big party with Jon and the Types. And they lived happily ever after, without any exceptions. 
+
+Curse of Macro
+shapeless clouds
+generic empire
+bibliothecarian tapir
+typelevel cats
+Princess dotty sealed the traits
+Jon's beautiful words formed a PrettyString.
+Jon - mit oder ohne H  
+The types were standing inline, transparently tupling up to whole case classes. 
+Isle M'Sabin <=> Ebene von Typelevel 
+river of runtime vanishing in the hole of logs
+The types could escape, with no exception.
+queen 
+Release the fury       
+Queen of reflection becomes rechtschaffene Queen of mirrors
+Sir Jon, the knight of the long forgotten Kingdom of Generics    
 
 Scala 3 (previously called [dotty](https://dotty.epfl.ch/)) is approaching its [release](https://dotty.epfl.ch/blog/2020/09/21/naming-schema-change.html)!
 This is a good opportunity to have a deeper look on some new features that it offers. For me one of the most exiting
@@ -26,7 +84,11 @@ better IDE support for derivation and faster compile times.
 In this blogpost we will step by step look into how to derive a custom typeclass for any data type and also provide a 
 powerful tool to do that derivation by just implementing some simple functions.
 
-Before we start let us have a look at the underlying concepts. When looking at any case class we can also describe that case class by breaking it down into its fields and represent it as a tuple as shown below.
+## The Tuple <=> Case Class duality and Typeclasses 
+
+Before we start let us have a look at the underlying concepts. 
+
+When looking at any case class we can also describe that case class by breaking it down into its fields and represent it as a tuple as shown below.
 
 ```scala
 case class User(name: String, age: Int) 
@@ -42,7 +104,7 @@ The second important concept is that of typeclasses. Let's look at a simple type
 
 ```scala
 trait PrettyString[A] {
-  def prettyString(a: A): String 
+  def prettyString(a: A): String // when implemented, prints a type A in a pretty, human readable way
 }
 ```
 
@@ -57,12 +119,13 @@ val intPrettyString =
 
 val stringPrettyString = 
   new PrettyString[String] {
-    def prettyString(a: String): String = s"\"$a\""
+    def prettyString(a: String): String = s"\"$a\"" // notice: string is printed in quotes!
   }
 
 val userPrettyString = 
   new PrettyString[User] {
-    def prettyString(a: User): String = s"User(name=${stringPrettyString.prettyString(a.name)}, age=${intPrettyString.prettyString(a.age)})"
+    def prettyString(a: User): String = 
+      s"User(name=${stringPrettyString.prettyString(a.name)}, age=${intPrettyString.prettyString(a.age)})"
   }
 
 println(intPrettyString.prettyString(5)) // prints 5
@@ -71,9 +134,12 @@ println(userPrettyString.prettyString(User("Bob", 25"))) // prints User(name="Bo
 ``` 
 
 So by defining the instances `intPrettyString`, `stringPrettyString` and `userPrettyString` we did provide the ability 
-to pretty print the types `Int`, `String` and `User`. What is also shown is that the typeclass for `User` is (manually) 
-derived from the instances for primitive types `Int` and `String`. In the end we will see how to do that automatically 
-for any case class or sealed trait by using scala 3 tools.
+to pretty print the types `Int`, `String` and `User`. What is also shown is that the typeclass instance for `User` is 
+(manually) derived from the instances for primitive types `Int` and `String`. In the end we will see how to do the 
+derivation automatically for any case class or sealed trait by using scala 3 tools.
+
+## A look in the Mirror
+
 
   
 In Scala 2 macros were needed to derive typeclasses (e.g. to automatically create a json codec) from case classes or 
