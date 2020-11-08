@@ -20,60 +20,85 @@ Scala 3 (previously called [dotty](https://dotty.epfl.ch/)) is approaching its [
 This is a good opportunity to have a deeper look on some new features that it offers. For me one of the most exiting
 features are the new metaprogramming abilities that scala 3 offers. Did you ever wonder how json libraries derive 
 codecs for you from case classes and sealed traits? Or how tapir generates a whole OpenAPI documentation from your 
-endpoint definitions?
+endpoint definitions? In this blog post we will discover how to do that in scala 3 and discover some new lange features
+like given, singleton types, reworked tuples, the exiting new enum definitions and finally the Mirror trait that allows 
+us to derive typeclass instances automatically for our data types. If you haven't heard of this things yet, don't be
+afraid. We will dive into the new scala version step by step. Even if the concepts of this post are between intermediate
+to advanced level, i will try to explain it so that it is also understandable for people that already got some
+experience with scala but haven't explored these concepts yet. If there is something you do not understand please don't
+hesitate to [ask](TODO).    
 
-// TODO: was kann man in diesem blog post lernen
-
-But before we start let me tell you the tale of princess Dotty. If you aren't into tales you may want to immediately 
-get your hands dirty by [jumping into the technical](TODO) part of the post. 
+But before we start let me tell you the tale of princess Dotty. For the impatient reader: You can skip the tale by
+clicking [here](TODO). 
 
 <section style="font-family: 'Lora', serif;">
-## The tale of Princess Dotty and Sir Jon
+## Princess Dotty, Sir Jon and the Queen of Reflection
 
-Once upon a time in the land of Scala there lived brave knight Sir Jon, also called [The Pretty](https://twitter.com/propensive). He fought for the rights
-of the poor Types, that were ruled by the evil queen of reflection. The queen would throw the Types in the river of Runtime
-by even the slightest approach to derive their birth given instances and flee back to their home, the kingdom of [Compiletime](https://dotty.epfl.ch/docs/reference/metaprogramming/inline.html#the-scalacompiletime-package). 
-Sir Jon knew, that a direct fight with the queen would create a lot of logs or even summon the queens feared demons, 
-also called "The Exceptions". So he came up with a smart plan: On the foundations of the [isle M'Sabin](https://twitter.com/milessabin) that was hidden from
-the evil queen behind [shapeless](https://github.com/milessabin/shapeless) clouds he built the library [Magnolia](https://github.com/propensive/magnolia) where he taught each Type to construct an instance
-to fight against the queen. Jons comrades in arms, the beautiful [Circe](https://github.com/circe/circe) and the 
-librarian [Tapir](https://tapir.softwaremill.com/) twittered the wise words
-all around the community, so that each Type [implicitly learned to summon](http://dotty.epfl.ch/docs/reference/contextual/using-clauses.html) 
-its birth [given instance](http://dotty.epfl.ch/docs/reference/contextual/givens.html). But Jons plan had a 
-weakness. When the queen became aware of Jons plan to start a revolution she casted the curse of Compile on the land 
-that would terribly slow down any Type trying to summon its instance, which caused lots of downtime. When Jon sensed 
-the curse he desperately began to search for a cure. His old friend, the wizard [M'acro](http://dotty.epfl.ch/docs/reference/dropped-features/macros.html) would have been
-able to break the curse, but the reign of the queen had exhausted his power, and he was approaching his last days in the 
-2nd age of Scala. Jon didn't knew what to do and was close to giving up when a small primitive Type named Int approached 
-him to share the rumours of the prophecy of [Odersky](https://twitter.com/odersky). The prophecy was about a long forgotten bloodline and its descendant,
-young princess [Dotty](https://dotty.epfl.ch/). It foretold that at the beginning of the 3rd age princess Dotty would appear to free all 
-Types from the queen. Jon traveled the whole country, even behind the valleys of [typelevel](https://typelevel.org/), to 
-eventually find princess Dotty which lived in the shadows of mountain [E'pfl](https://scala.epfl.ch/). Princess Dotty, who was not aware of her 
-role in the prophecy, was surprised that the well-known knight Jon asked her for help but after Jon told her the story she began to
-smile. Her mother Java had given her a magic mirror before she passed away. Java told young Dotty that everyone looking 
-in the mirror will see ones soul broken down into its individual parts, so they have to face their real self, as good or as
-evil like it is. Jon and Dotty then made up a plan to speak up at the next audience of the queen, pretending to surrender. 
-They went there and gave the queen Dottys mirror as a gift to soothe her. The queen then, in the euphoria
-of victory, unwrapped the gift, when at the first blink the mirror immediately released its [fury](https://github.com/propensive/fury). The queen was shaken by 
-her own reflection and she screamed in agony as she realized that Dotty and Jon had tricked her. The magic of the mirror quickly let her fall
-into a deep sleep. Jon and Dotty imprisoned the queen in a trifold [IO-Monad](https://zio.dev/) guarded by the mystic [Cats](https://typelevel.org/cats-effect) of [Monix](https://monix.io/) so that she could no 
-longer access the river of Runtime. Now all Types were free and could go back to the kingdom of Compiletime. 
-But as they approached the border, they realized that the land had dried over time. Sir Jon, Dotty and the Types started searching
-for the [stream](https://fs2.io/) that had once fed them and the [Alp](https://doc.akka.io/docs/alpakka/current/index.html) [akkas](https://akka.io/) nearby. 
-After three days of search, thirsty and exhausted, Dotty all of a sudden 
-noticed that the queen, still trapped inside the IO-Monad, slightly started to glow. The magic sleep 
-seemed to heal the broken parts of the queens soul. TODO: Suddenly little Int screamed with joy: He remembered that in the 
-prophecy of Odersky the magic mirror was said to invert the queens soul. She was foreseen to become the queen of [mirrors](http://dotty.epfl.ch/docs/reference/contextual/derivation.html)!
+Once upon a time in the land of Scala there lived a brave knight. His name was Sir Jon but most people just called him [The Pretty](https://twitter.com/propensive). 
+He was the defender of a poor folk which called itself "The Types". Many year ago they were abducted from the kingdom of
+[Compiletime](https://dotty.epfl.ch/docs/reference/metaprogramming/inline.html#the-scalacompiletime-package)
+by the evil Queen of Reflection. The queen ruled with terrible harshness. Everyone who tried to flee 
+from her frightening reign would be thrown into the river of Runtime, that flowed into the great log pool, to never be
+seen again. 
+ 
+Sir Jons plan was to build an army in secret, but he knew that a direct fight with the queen would not be possible. The
+queen was guarded by an army of dreaded demons which were called "The Exceptions" by the people, who did not dare to
+pronounce their names. That why he thought of a smart plan: On the foundations of the [isle M'Sabin](https://twitter.com/milessabin), 
+that was hidden from the evil queens henchmen behind the [shapeless](https://github.com/milessabin/shapeless) clouds,
+he built the library [Magnolia](https://github.com/propensive/magnolia). From there he twittered his wise words all 
+around the community of types, that came to learn at his [zone](https://scala.zone/). He would teach each Type how to 
+`summon` their birth-`given` instance to defend themselves from the queens army.
+
+But the queen became aware of Jons plan to start a revolution and she casted a curse on the land that would 
+terribly slow down any Type trying to summon its instance, which caused lots of compiletime. When Jon became aware of 
+the curse he desperately began to search for a cure. His old friend, the wizard M'acrowas a skilled witcher and wise 
+man but the reign of the queen had exhausted his power, and he was approaching his
+[last days in the 2nd age]((http://dotty.epfl.ch/docs/reference/dropped-features/macros.html)) of Scala. 
+Jon didn't knew what to do and was close to giving up when a small primitive Type named Boo Lean approached 
+him to share the rumours of the prophecy of [Odersky](https://twitter.com/odersky). 
+
+The prophecy was about a long forgotten bloodline and its descendant, young princess [Dotty](https://dotty.epfl.ch/).
+It foretold that at the beginning of the 3rd age princess Dotty would appear to free all Types from the queen. 
+Jon traveled the whole country, even behind the valleys of [typelevel](https://typelevel.org/), to 
+eventually find princess Dotty which lived in the shadows of mountain [E'pfl](https://scala.epfl.ch/) in a small 
+village with the strange name named Rele Asecan Didate. Princess Dotty, who was not aware of her role in the prophecy, 
+was surprised that the well-known knight asked her for help as she was still a young girl and hadn't been [released](https://dotty.epfl.ch/blog/2020/09/21/naming-schema-change.html)
+outside of her village yet, but after Jon told her the story she began to smile. 
+
+Her mother Java had given her a magic mirror before she passed away. Java told young Dotty that everyone looking 
+in the mirror will see his soul breaking into its elementary parts andface their real self, as good or as
+bad like it is. 
+
+The following day Jon and Dotty made up a plan to speak up at the next audience of the queen under the excuse to
+surrender. At the audience they gave the queen Dottys mirror as a gift to soothe her. The queen then in her arrogance
+and with a toxic smile in her face began to unwrap the gift. But at the first blink the mirror immediately released its
+[fury](https://github.com/propensive/fury). The queen was shaken by her own reflection and screamed in agony as she 
+realized that Dotty and Jon had tricked her. The magic of the mirror quickly made her fall asleep. Jon and Dotty 
+imprisoned the queen in a trifold [IO-Monad](https://zio.dev/) guarded by the mystic
+[Cats](https://typelevel.org/cats-effect) of [Monix](https://monix.io/) so that she no longer could cause any 
+side effects. 
+
+When they heard of Dottys and Jons victory over the queen the Types started dancing and went on a march back to their
+kingdom of Compiletime. But as they approached the border, they realized that the land had dried over time. 
+They started searching for the [stream](https://fs2.io/) that had once fed them and the 
+[Alp](https://doc.akka.io/docs/alpakka/current/index.html) [akkas](https://akka.io/) nearby. 
+
+After three days of search, thirsty and exhausted, Dotty all of a sudden noticed that the queen, still trapped inside 
+the IO-Monad, slightly started to glow. The magic sleep seemed to heal the broken parts of the queens soul. 
+Little Boo Lean then remembered that in the prophecy of Odersky the magic mirror was told to be able to invert 
+the queens soul. She was foreseen to become the Queen of 
+[Mirror](http://dotty.epfl.ch/docs/reference/contextual/derivation.html), a righteous and kindly ruler!
 The queen, woken up by little Ints scream, slowly began to speak in a deep voice: "You freed me
-from my own curse, princess Dotty and Sir Jon. I know that the Types want to live in a flourishing land and so may it be.
-You need to release the river of Runtime to again flow through the kingdom to enter the era of generic programming." - 
-"Yeah, sure" said Sir Jon and laughed. "How could we forget about that?". Then the Types broke the old dam that held back
-the river of runtime and it released its refreshing energy into the kingdom of Compiletime. Dotty then freed the queen
-and they celebrated a big party with Jon and the Types under the beats of [DJ Caliban](https://github.com/ghostdogpr/caliban) 
-where they drank a lot of [sangria](https://sangria-graphql.github.io/) 
-and ate many [burritos](https://emorehouse.wescreates.wesleyan.edu/silliness/burrito_monads.pdf). Dotty had finally 
-[unioned](http://dotty.epfl.ch/docs/reference/new-types/union-types.html) all Types under the righteous queen of mirrors like the prophecy of 
-Odersky foresaw. And they lived in [equality](http://dotty.epfl.ch/docs/reference/contextual/multiversal-equality.html) happily ever after, without any exceptions.
+from my own curse, princess Dotty. I know that the Types want to live in a flourishing land and so may it be.
+You need to release the river of Runtime to flow through the kingdom to enter the era of generic programming". - 
+"Yeah, sure" said Sir Jon and laughed. "How could we forget about that?". The Types then went to the old dam that held
+backthe river of runtime and it released its refreshing energy into the kingdom of Compiletime. After that Dotty freed
+the queen and they celebrated a big party with Jon and the Types where they ate many
+[burritos](https://emorehouse.wescreates.wesleyan.edu/silliness/burrito_monads.pdf). Dotty had finally 
+[unioned](http://dotty.epfl.ch/docs/reference/new-types/union-types.html) all Types under the Queen of Mirrors
+like the prophecy of Odersky foresaw. And they lived in 
+[equality](http://dotty.epfl.ch/docs/reference/contextual/multiversal-equality.html) happily ever after,
+without any exceptions.
 
 </section> 
 
