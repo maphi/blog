@@ -22,6 +22,8 @@ features are the new metaprogramming abilities that scala 3 offers. Did you ever
 codecs for you from case classes and sealed traits? Or how tapir generates a whole OpenAPI documentation from your 
 endpoint definitions?
 
+// TODO: was kann man in diesem blog post lernen
+
 But before we start let me tell you the tale of princess Dotty. If you aren't into tales you may want to immediately 
 get your hands dirty by [jumping into the technical](TODO) part of the post. 
 
@@ -125,7 +127,8 @@ val intPrettyString =
 
 val stringPrettyString = 
   new PrettyString[String] {
-    def prettyString(a: String): String = s"\"$a\"" // notice: string is printed in quotes!
+    // notice: string is printed in quotes - how pretty \o/
+    def prettyString(a: String): String = s""""$a"""" // triple quoted because we can't escape in single quoted string
   }
 
 val userPrettyString = 
@@ -208,12 +211,15 @@ Let's now recheck how the Mirror type would look like for our `User` case class 
 method which is not relevant for now.
 
 ```scala
-val userMirror: Mirror.Product = new Mirror.Product {
+import scala.compiletime.Mirror
+
+// this is how the mirror for User would look like:
+trait UserMirror extends Mirror.Product {
   type MirroredType = User
   type MirroredLabel = "User"
   type MirroredElemLabels = ("name", "age")
   type MirroredElemTypes = (String, Int)
-} 
+}
 ```
 
 Ok that doesn't look to complicated. We have all the information in place that we would need to automatically 
@@ -224,13 +230,14 @@ the value level to work with it at runtime. Let's start with the label of the ty
 import scala.compiletime.constValue
 
 // get the type label from a mirror
-def labelFromMirror(m: Mirror): String = constValue[m.MirroredLabel]
+inline def labelFromMirror[A](using m: Mirror.Of[A]): String = constValue[m.MirroredLabel]
 
-println(labelFromMirror(userMirror)) // prints User
+println(labelFromMirror[User]) // prints User
 ```
 
 This was pretty easy. We just pass our `labelFromMirror` the mirror as an argument and it will use the `constValue` 
-function that we discussed before to summon the value from the type level. 
+function that we discussed before to summon the value from the type level. The keyword `inline` is needed here because
+the compiler needs to resolve `constValue` statically at compiletime which `inline` makes possible. 
 
 Summoning the element labels is a little bit more tricky. As it is a tuple we need to deconstruct it step by step
 and create a simple `List[String]` out of that by using a recursive function:
@@ -238,17 +245,21 @@ and create a simple `List[String]` out of that by using a recursive function:
 ```scala
 import scala.compiletime.erasedValue
 
-def summonElemLabels[A <: Tuple]: List[String] = erasedValue[A] match {
-  case _: EmptyTuple => Nil // stop condition - the tuple is empty
-  case _: (t *: ts) => 
-    val headElementLabel = constValue[t].toString // bring the head label to value space
-    val tailElementLabels = summonElemLabels[ts] // recursive call to get the labels from the tail
-    headElementLabel :: tailElementLabels // concat head + tail
-}
+inline def summonElemLabels[A <: Tuple]: List[String] = inline erasedValue[A] match {
+    case _: EmptyTuple => Nil // stop condition - the tuple is empty
+    case _: (t *: ts) => 
+      val headElementLabel = constValue[t].toString // bring the head label to value space
+      val tailElementLabels = summonElemLabels[ts] // recursive call to get the labels from the tail
+      headElementLabel :: tailElementLabels // concat head + tail
+  }
 
-val userElementLabels = summonElemLabels[userMirror.MirroredElemLabels] // List("name", "age")
+inline def summonElemLabelsHelper[A](using m: Mirror.Of[A]) = // helper to summon the mirror
+   summonElemLabels[m.MirroredElemLabels] // and call summonElemLabels with the elemlabels type
+
+val userElementLabels = summonElemLabelsHelper[User] // List("name", "age")
 ```
 
+Ok, a lot of `inline`s needed here to let the compiler do its work but let's just take it as it is. 
 The interesting thing here is the trick with the `erasedValue` function. It allows us to create a **virtual** instance 
 of the type `A` and match on it. Virtual means that this is done at compiletime and there is no actual value at runtime. 
 It is just resolved statically by the compiler. This allows us to deconstruct the tuple step by step.
@@ -257,16 +268,20 @@ Great, we've got all the labels in place. What's still missing are the typeclass
 Gathering them can be done like this:
  
 ```scala
-def summonInstances[A <: Tuple]: List[PrettyString[Any]] = erasedValue[A] match {
+import scala.compiletime.summonInline
+
+inline def summonInstances[A <: Tuple]: List[PrettyString[Any]] = inline erasedValue[A] match {
   case _: EmptyTuple => Nil
   case _: (t *: ts) => 
-    val headTypeClass = summon[TC[t]] // summon was known as implicitly in scala 2
+    val headTypeClass = summonInline[PrettyString[t]] // summon was known as implicitly in scala 2
     val tailTypeClasses = summonInstances[ts] // recursive call to resolve also the tail
     headTypeClass.asInstanceOf[PrettyString[Any]] :: summonInstances[ts]
 }
+inline def summonInstancesHelper[A](using m: Mirror.Of[A]) = // helper again
+   summonInstances[m.MirroredElemTypes]
 
 val userInstances: List[PrettyString[Any]] = 
-  summonInstances[userMirror.MirroredElemTypes] // List(stringPrettyString, intPrettyString)
+  summonInstancesHelper[User] // List(stringPrettyString, intPrettyString)
 ```
 
 This is very similar to the `summonElemLabels` method. It recurses through the element types tuple and summons the 
@@ -277,26 +292,29 @@ did in scala 2. Right now we got all the information in place that we need for t
 With that we are able to implement a method to do the derivation:
 
 ```scala
-def derivePrettyString[A <: scala.Product](m: Mirror.Product) =  
-  new PrettyString[A] {
-    def prettyString(a: User): String = { 
-      val label = labelFromMirror(m)
-      val elemLabels = summonElemLabels[m.MirroredElemLabels]
-      val elemInstances = summonInstances[m.MirroredElemTypes]
-      val elemStrings = a.productIterator.zip(elemLabels).zip(elemInstances).map{
-        case (elem, label, instance) => s"$label=${instance.prettyString(elem)}"
-      }     
-      s"$label(${elemStrings.mkString(", ")})"
-    }
-  }
+inline def derivePrettyString[A <: scala.Product](using m: Mirror.ProductOf[A]) =
+     new PrettyString[A] {
+       def prettyString(a: A): String = { 
+         val label = labelFromMirror[m.MirroredType]
+         val elemLabels = summonElemLabels[m.MirroredElemLabels]
+         val elemInstances = summonInstances[m.MirroredElemTypes]
+         val elemStrings = a.productIterator.zip(elemLabels).zip(elemInstances).map{
+           case ((elem, label), instance) => s"$label=${instance.prettyString(elem)}"
+         }     
+         s"$label(${elemStrings.mkString(", ")})"
+       }
+     }
+
+val userPrettyString = derivePrettyString[User]
 ```
 
-We are just gathering the information and then iterating over the elements of the case class with the productIterator
-method that returns an iterator of all elements of that case class. Zipping it with the labels and instances we can 
-assemble our pretty string.
+We are just gathering the information and then iterating over the elements of the case class with the `productIterator`
+method from `scala.Product` that returns an iterator of all elements of that case class. After zipping it with the 
+labels and instances we can assemble our pretty string.
 
-To use that method on our `User` case class we would need to provide the instances for the element types String and Int
-with the new `given` syntax which replaces the implicits from scala 2 that were used for typeclass instances before:
+Before we can use the `derivePrettyString` method we also need to provide the instances for the element types String 
+and Int with the new `given` syntax. `given` replaces the implicits from scala 2 that were used for typeclass instances
+before:
 
 ```scala
 given intPrettyString as PrettyString[Int] {
@@ -304,28 +322,76 @@ given intPrettyString as PrettyString[Int] {
 }
 
 given stringPrettyString as PrettyString[String] {
-  def prettyString(a: String): String = s"\"$a\""
+  def prettyString(a: String): String = s""""$a""""
 }
 
-val userPrettyString = derivePrettyString(summon[Mirror.ProductOf[User]])
+val userPrettyString = derivePrettyString[User]
 
-println(userPrettyString.prettyString(User("bob", 25))) // prints User(name="Bob", age=25)
+println(userPrettyString.prettyString(User("Bob", 25))) // prints User(name="Bob", age=25)
 ```
 
 Awesome! In the snippet above we let the compiler assemble the typeclass for our `User` type. This would also work for 
 any other case class as long as all individual elements have a respective given instance defined. 
 
-It could also work for nested case classes as soon as we make the derivation itself a `given`. But let's first take a
-look at how to handle sealed traits. 
+It will also work for nested case classes as soon as we make the derivation itself a `given`. But let's first take a
+look at how to handle sealed traits. We can use the same methods as before to extract information but we would need to 
+use them in a different way. But let's first create a sealed trait that we can use as an example:
 
+```scala
+sealed trait Visitor
+case class User(name: String, age: Int) extends Visitor // User like before, but extending Visitor
+case object AnonymousVisitor extends Visitor // A user that is not registered visiting our website
 
-  
+// Btw in scala 3 you can write sealed traits also with the new enum syntax which is super nice:
+enum Visitor {
+  case User(name: String, age: Int)
+  case AnonymousVisitor
+}
+// dont forget the import to have User and AnonymousVisitor in scope:
+import Visitor._
+```
+
+Ok let's now implement the derivation for the sealed trait:
+
+```scala
+inline def derivePrettyStringSealedTrait[A](using m: Mirror.SumOf[A]) =  
+  new PrettyString[A] {
+    def prettyString(a: A): String = { 
+      val label = labelFromMirror[m.MirroredType]
+      // val elemLabels = summonElemLabels[m.MirroredElemLabels] - not needed for our PrettyString
+      val elemInstances = summonInstances[m.MirroredElemTypes]
+      val elemOrdinal = m.ordinal(a) // Checks the ordinal of the type, e.g. 0 for User or 1 for AnonymousVisitor
+      val elemPrettyString = elemInstances(elemOrdinal).prettyString(a) 
+      
+      s"$label.$elemPrettyString"
+    }
+  }
+```
+
+Now having methods for case classes and sealed traits in place we can create our generic derivation method that works in 
+generic and nested cases. We need to make it a `given` to enable the automatic derivation and we will also let the 
+compiler create the mirror for us with a `using` parameter (in scala 2 this was just an implicit parameter)
+
+```scala
+// in scala 2 this would have been: implicit def derived[A](implicit m: Mirror.Of[A]): PrettyString[A]
+given derived[A](using m: Mirror.Of[A]) as PrettyString[A] = {
+  val elemLabel = constValue[m.MirroredLabel]
+  val elemInstances = summonInstances[m.MirroredElemTypes]
+  val elemLabels = summonElemLabels[m.MirroredElemLabels]
+  m match {
+    case s: Mirror.SumOf[A]     => derivePrettyString(s, elemLabel, elemInstances, elemLabels)
+    case p: Mirror.ProductOf[A] => derivePrettyStringSealedTrait(p, elemLabel, elemInstances, elemLabels)
+  }
+}
+```
 
 TODO: reference dotty docs
 TODO: function => method
 TODO: rename summonElemLabels => getElemLabels
 TODO: rename summonInstances => getInstances
 TODO: scala groß
+TODO: derivePrettyString => derivePrettyStringCaseClass
+TODO: explain scala product
 
  
 ******************************************************************************************************
