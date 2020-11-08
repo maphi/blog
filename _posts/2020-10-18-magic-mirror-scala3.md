@@ -292,13 +292,14 @@ did in scala 2. Right now we got all the information in place that we need for t
 With that we are able to implement a method to do the derivation:
 
 ```scala
-inline def derivePrettyString[A <: scala.Product](using m: Mirror.ProductOf[A]) =
+inline def derivePrettyString[A](using m: Mirror.ProductOf[A]) =
      new PrettyString[A] {
        def prettyString(a: A): String = { 
          val label = labelFromMirror[m.MirroredType]
          val elemLabels = summonElemLabels[m.MirroredElemLabels]
          val elemInstances = summonInstances[m.MirroredElemTypes]
-         val elemStrings = a.productIterator.zip(elemLabels).zip(elemInstances).map{
+         val elems = a.asInstanceOf[Product].productIterator // every case class extends scala.Product, we can safely cast here
+         val elemStrings = elems.zip(elemLabels).zip(elemInstances).map{
            case ((elem, label), instance) => s"$label=${instance.prettyString(elem)}"
          }     
          s"$label(${elemStrings.mkString(", ")})"
@@ -335,7 +336,7 @@ any other case class as long as all individual elements have a respective given 
 
 It will also work for nested case classes as soon as we make the derivation itself a `given`. But let's first take a
 look at how to handle sealed traits. We can use the same methods as before to extract information but we would need to 
-use them in a different way. But let's first create a sealed trait that we can use as an example:
+use them in a different way. Here is a concret example that we can work with:
 
 ```scala
 sealed trait Visitor
@@ -351,39 +352,89 @@ enum Visitor {
 import Visitor._
 ```
 
-Ok let's now implement the derivation for the sealed trait:
+Now we can implement the derivation for the sealed trait:
 
 ```scala
 inline def derivePrettyStringSealedTrait[A](using m: Mirror.SumOf[A]) =  
   new PrettyString[A] {
     def prettyString(a: A): String = { 
-      val label = labelFromMirror[m.MirroredType]
+      // val label = labelFromMirror[m.MirroredType] - not needed for our PrettyString
       // val elemLabels = summonElemLabels[m.MirroredElemLabels] - not needed for our PrettyString
       val elemInstances = summonInstances[m.MirroredElemTypes]
       val elemOrdinal = m.ordinal(a) // Checks the ordinal of the type, e.g. 0 for User or 1 for AnonymousVisitor
       val elemPrettyString = elemInstances(elemOrdinal).prettyString(a) 
       
-      s"$label.$elemPrettyString"
+      s"$elemPrettyString"
     }
   }
 ```
 
-Now having methods for case classes and sealed traits in place we can create our generic derivation method that works in 
-generic and nested cases. We need to make it a `given` to enable the automatic derivation and we will also let the 
-compiler create the mirror for us with a `using` parameter (in scala 2 this was just an implicit parameter)
+Using that on our sealed trait will not work yet because it also contains case classes. we need to combine the 
+derivation of both, case classes and sealed traits first in a common `given` method:
 
 ```scala
 // in scala 2 this would have been: implicit def derived[A](implicit m: Mirror.Of[A]): PrettyString[A]
-given derived[A](using m: Mirror.Of[A]) as PrettyString[A] = {
-  val elemLabel = constValue[m.MirroredLabel]
-  val elemInstances = summonInstances[m.MirroredElemTypes]
-  val elemLabels = summonElemLabels[m.MirroredElemLabels]
-  m match {
-    case s: Mirror.SumOf[A]     => derivePrettyString(s, elemLabel, elemInstances, elemLabels)
-    case p: Mirror.ProductOf[A] => derivePrettyStringSealedTrait(p, elemLabel, elemInstances, elemLabels)
+inline given derived[A](using m: Mirror.Of[A]) as PrettyString[A] =
+  inline m match {
+    case s: Mirror.SumOf[A]     => derivePrettyStringSealedTrait(using s)
+    case p: Mirror.ProductOf[A] => derivePrettyString(using p)
   }
+```
+
+Using the derived method we can now create `PrettyString` instances for our `Visitor` type:
+
+```scala
+val visitorPrettyString = derived[Visitor]
+val visitors = List(
+  User("Bob", 25),
+  AnonymousVisitor
+)
+
+visitors.foreach(visitor =>
+  println(visitorPrettyString.prettyString(visitor))
+)
+// prints: User("Bob", 25)
+           AnonymousVisitor()  
+```
+
+Ok fine, but wait! Where are these brackets behind "AnonymousVisitor" coming from? This is because `AnonymousVisitor`
+is a case object which is from the compiler treated like a case class with zero elements. So in the derivation process
+for `AnonymousVisitor` it will create an instance for a product type, that as we defined it above prints also the 
+brackets. Let's quickly fix that:
+
+```scala
+inline def derivePrettyString[A](using m: Mirror.ProductOf[A]) =
+     new PrettyString[A] {
+       def prettyString(a: A): String = { 
+         val label = labelFromMirror[m.MirroredType]
+         val elemLabels = summonElemLabels[m.MirroredElemLabels]
+         val elemInstances = summonInstances[m.MirroredElemTypes]
+         val elems = a.asInstanceOf[Product].productIterator
+         val elemStrings = elems.zip(elemLabels).zip(elemInstances).map{
+           case ((elem, label), instance) => s"$label=${instance.prettyString(elem)}"
+         }     
+         // TODO: highlight
+         if (elemLabels.isEmpty) { // check if this is a case object (or parameterless case class)
+           label
+         } else {
+           s"$label(${elemStrings.mkString(", ")})"
+         }
+       }
+     }
+```
+
+Now our derived instance will print "AnonymousVisitor" without the brackets! If you wan't to have the best experience
+when using automated derivation you should put the `derived` method in the companion object of your typeclass. After 
+doing that you can easily have an instance created automatically by writing:
+
+```scala
+enum Visitor derives PrettyString {
+  case User(name: String, age: Int)
+  case AnonymousVisitor
 }
 ```
+
+TODO: shoutout to miles for shapeless, jon for magnolia, library maintainers for scala3 migration, hope overcome split in scala like usa 
 
 TODO: reference dotty docs
 TODO: function => method
@@ -392,6 +443,11 @@ TODO: rename summonInstances => getInstances
 TODO: scala groß
 TODO: derivePrettyString => derivePrettyStringCaseClass
 TODO: explain scala product
+TODO: remove Product subtyping constraint text
+TODO: Ah ... yes. Let me say it like this: To make the compiler happy we need to feed it a lot of `inline` keywords. 
+The scala compiler is just a hungry alpaca in the category of keyword-burritos ... ehm ... whatever, let's not get 
+ distracted. 
+TODO: Hero image - queen with reflection crazy alpaca
 
  
 ******************************************************************************************************
