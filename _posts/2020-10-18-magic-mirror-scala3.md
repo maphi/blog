@@ -100,19 +100,53 @@ like the prophecy of Odersky foresaw. And they lived in
 [equality](http://dotty.epfl.ch/docs/reference/contextual/multiversal-equality.html) happily ever after,
 without any exceptions.
 
-</section> 
+</section>
 
-// TODO: Überleitung
+Even if it is only a tale that kids have been listening to for centuries there lies some truth within that you may think
+of while reading this post. Let's now dive into some new and old concepts before we get our hands dirty.
 
-These libraries do that by deriving typeclasses, which provide a defined set of functionality for a given data type. 
-For example a json codec or an API description. In scala 2 this was only possible by using macros and more or less 
-complex constructs which can lead to very long compile times. Also scala 2 macros will not be supported anymore in scala 3.
+## Concepts
 
-Instead, scala 3 offers us builtin tools to achieve what was done with macros before, which will hopefully also lead to 
-better IDE support and faster compile times.
+### Typeclasses
 
-In this blogpost we will step by step look into how to derive a custom typeclass for any data type and also provide a 
-powerful tool to do that derivation by just implementing some simple functions.
+The first important thing to understand is that of typeclasses. This is already known in the scala community. In case
+you didn't came across it yet let me introduce it to you. In this post we will implement the typeclass `PrettyString` 
+that looks like this: 
+
+```scala
+trait PrettyString[A] {
+  def prettyString(a: A): String // will print a type A in a pretty, human readable way
+}
+```
+
+The `PrettyString` typeclass provides us with the ability to convert any type to a string. Imaging having a type that
+you can not extend e.g. `String` but you wan't to add some extra functionality in a way that also works for other types.
+
+That can be done by implementing the `PrettyString` trait from above for that type:
+
+```scala
+given stringAsPrettyString as PrettyString[String] {
+  // notice: string is printed in quotes - how pretty \o/
+  def prettyString(a: String): String = s""""$a"""" // triple quoted because we can't escape quotes in single quoted string
+}
+
+println(stringAsPrettyString.prettyString("hello world")) // prints "hello world"
+``` 
+
+You may now think "Great, this is like the `.toString` method, but much more difficult to use", 
+but calm down young padawan. First our `PrettyString` instance for `String` wraps the result in quotes 
+(yeah, awesome - i know) and second you will get to know the true power of typeclasses when you reach the 
+end of this post. If you wander what `given` means: This is the new way to define 
+
+To make the usage of the typeclass more convenient we will introduce a method that uses this typeclass to simply print 
+the pretty string to the console:
+
+```scala
+def prettyPrintln[A](a: A)(using prettyStringInstance: PrettyString[A]) = 
+  println(prettyStringInstance.prettyString(a))
+
+prettyPrintln("hello world")
+``` 
 
 ## The Tuple <=> Case Class duality and Typeclasses TODO: typelevel strings, HLists
 
