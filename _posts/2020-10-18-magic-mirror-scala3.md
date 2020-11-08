@@ -167,8 +167,8 @@ The tool that scala 3 provides us with that will allow us to do the derivation i
 sealed trait Mirror {
   type MirroredType // the type that was mirrored itself
   type MirroredLabel <: String // the label of the mirrored type
-  type MirroredElemTypes <: Tuple // a tuple of types for each individual element
   type MirroredElemLabels <: Tuple // a tuple of the labels for each individual element
+  type MirroredElemTypes <: Tuple // a tuple of types for each individual element
 }
 ```
 
@@ -179,8 +179,8 @@ So what do the different types mean:
 
  - `MirroredType` - is just the type we are deriving from, e.g. our case class `User`
  - `MirroredLabel` - typelevel representation of the label of the type we mirror, so the string `"User"`
- - `MirroredElemTypes` - A tuple of all elements that `User` can be broken into: `(String, Int)` (for fields name and age)
  - `MirroredElemLabels` - A Tuple that contains the member names at typelevel, so of type `("name", "age")`
+ - `MirroredElemTypes` - A tuple of all elements that `User` can be broken into: `(String, Int)` (for fields name and age)
  
 Now we've got some useful things, like the labels and the types of the individual elements that our type consist of. 
 But we still need some extra information if our type is a case class or a sealed trait. 
@@ -195,7 +195,7 @@ trait Product extends Mirror {
 
 // represents a sealed trait
 trait Sum extends Mirror { self =>
- def ordinal(x: MirroredMonoType): Int
+ def ordinal(x: MirroredType): Int
 }
  ```
  
@@ -208,11 +208,11 @@ Let's now recheck how the Mirror type would look like for our `User` case class 
 method which is not relevant for now.
 
 ```scala
-val userMirror: Product = new Product with Mirror {
+val userMirror: Mirror.Product = new Mirror.Product {
   type MirroredType = User
   type MirroredLabel = "User"
-  type MirroredElemTypes = (String, Int)
   type MirroredElemLabels = ("name", "age")
+  type MirroredElemTypes = (String, Int)
 } 
 ```
 
@@ -242,21 +242,90 @@ def summonElemLabels[A <: Tuple]: List[String] = erasedValue[A] match {
   case _: EmptyTuple => Nil // stop condition - the tuple is empty
   case _: (t *: ts) => 
     val headElementLabel = constValue[t].toString // bring the head label to value space
-    val tailElementLabels = summonElemLabels[ts] // recursive call to summon the labels from the tail
+    val tailElementLabels = summonElemLabels[ts] // recursive call to get the labels from the tail
+    headElementLabel :: tailElementLabels // concat head + tail
 }
 
 val userElementLabels = summonElemLabels[userMirror.MirroredElemLabels] // List("name", "age")
 ```
 
-The interesting thing here is the trick with the `erasedValue` function. This allows us to create a **virtual** instance 
-of the type `A` and match on it. Virtual means that this is done at compiletime and there is no actual value, but it
-still allows us to match on the type and deconstruct the tuple step by step.
+The interesting thing here is the trick with the `erasedValue` function. It allows us to create a **virtual** instance 
+of the type `A` and match on it. Virtual means that this is done at compiletime and there is no actual value at runtime. 
+It is just resolved statically by the compiler. This allows us to deconstruct the tuple step by step.
+
+Great, we've got all the labels in place. What's still missing are the typeclass instances for the individual elements.
+Gathering them can be done like this:
+ 
+```scala
+def summonInstances[A <: Tuple]: List[PrettyString[Any]] = erasedValue[A] match {
+  case _: EmptyTuple => Nil
+  case _: (t *: ts) => 
+    val headTypeClass = summon[TC[t]] // summon was known as implicitly in scala 2
+    val tailTypeClasses = summonInstances[ts] // recursive call to resolve also the tail
+    headTypeClass.asInstanceOf[PrettyString[Any]] :: summonInstances[ts]
+}
+
+val userInstances: List[PrettyString[Any]] = 
+  summonInstances[userMirror.MirroredElemTypes] // List(stringPrettyString, intPrettyString)
+```
+
+This is very similar to the `summonElemLabels` method. It recurses through the element types tuple and summons the 
+respective typeclass instances for the individual elements. The method `summon` was introduced in dotty to clean up with
+the different meanings of implicits in scala 2. In scala 3 typeclass instances no longer use `implicit` as keyword but 
+`given` instead. And the method to fetch the instance is called `summon` and does the exact same things is `implicitly`
+did in scala 2. Right now we got all the information in place that we need for the generic derivation. 
+With that we are able to implement a method to do the derivation:
+
+```scala
+def derivePrettyString[A <: scala.Product](m: Mirror.Product) =  
+  new PrettyString[A] {
+    def prettyString(a: User): String = { 
+      val label = labelFromMirror(m)
+      val elemLabels = summonElemLabels[m.MirroredElemLabels]
+      val elemInstances = summonInstances[m.MirroredElemTypes]
+      val elemStrings = a.productIterator.zip(elemLabels).zip(elemInstances).map{
+        case (elem, label, instance) => s"$label=${instance.prettyString(elem)}"
+      }     
+      s"$label(${elemStrings.mkString(", ")})"
+    }
+  }
+```
+
+We are just gathering the information and then iterating over the elements of the case class with the productIterator
+method that returns an iterator of all elements of that case class. Zipping it with the labels and instances we can 
+assemble our pretty string.
+
+To use that method on our `User` case class we would need to provide the instances for the element types String and Int
+with the new `given` syntax which replaces the implicits from scala 2 that were used for typeclass instances before:
+
+```scala
+given intPrettyString as PrettyString[Int] {
+  def prettyString(a: Int): String  = a.toString
+}
+
+given stringPrettyString as PrettyString[String] {
+  def prettyString(a: String): String = s"\"$a\""
+}
+
+val userPrettyString = derivePrettyString(summon[Mirror.ProductOf[User]])
+
+println(userPrettyString.prettyString(User("bob", 25))) // prints User(name="Bob", age=25)
+```
+
+Awesome! In the snippet above we let the compiler assemble the typeclass for our `User` type. This would also work for 
+any other case class as long as all individual elements have a respective given instance defined. 
+
+It could also work for nested case classes as soon as we make the derivation itself a `given`. But let's first take a
+look at how to handle sealed traits. 
 
 
-
+  
 
 TODO: reference dotty docs
 TODO: function => method
+TODO: rename summonElemLabels => getElemLabels
+TODO: rename summonInstances => getInstances
+TODO: scala groß
 
  
 ******************************************************************************************************
