@@ -297,7 +297,8 @@ println(labelFromMirror[User]) // prints User
 
 This was pretty easy. We just pass our `labelFromMirror` the mirror as an argument and it will use the `constValue` 
 function that we discussed before to summon the value from the type level. The keyword `inline` is needed here because
-the compiler needs to resolve `constValue` statically at compiletime which `inline` makes possible. 
+the compiler needs to resolve `constValue` statically and inline it at compiletime which the `inline` keyword makes
+possible. 
 
 Summoning the element labels is a little bit more tricky. As it is a tuple we need to deconstruct it step by step
 and create a simple `List[String]` out of that by using a recursive function:
@@ -319,10 +320,12 @@ inline def summonElemLabelsHelper[A](using m: Mirror.Of[A]) = // helper to summo
 val userElementLabels = summonElemLabelsHelper[User] // List("name", "age")
 ```
 
-Ok, a lot of `inline`s needed here to let the compiler do its work but let's just take it as it is. 
-The interesting thing here is the trick with the `erasedValue` function. It allows us to create a **virtual** instance 
-of the type `A` and match on it. Virtual means that this is done at compiletime and there is no actual value at runtime. 
-It is just resolved statically by the compiler. This allows us to deconstruct the tuple step by step.
+Ah ... yes. Let me say it like this: To make the compiler happy we need to feed it a lot of `inline` keywords here.
+In terms of automatic derivation the scala compiler is just a hungry alpaca in the category of keywords ...
+ehm ... whatever, let's not get distracted. The most interesting thing here is the trick with the `erasedValue`
+function. It allows us to create a **virtual** instance of the type `A` and match on it. Virtual means that this is done
+at compiletime and there is no actual value at runtime. It is just resolved statically by the compiler. This allows us 
+to deconstruct the tuple step by step during compilation.
 
 Great, we've got all the labels in place. What's still missing are the typeclass instances for the individual elements.
 Gathering them can be done like this:
@@ -504,9 +507,6 @@ TODO: scala groß
 TODO: derivePrettyString => derivePrettyStringCaseClass
 TODO: explain scala product
 TODO: remove Product subtyping constraint text
-TODO: Ah ... yes. Let me say it like this: To make the compiler happy we need to feed it a lot of `inline` keywords. 
-The scala compiler is just a hungry alpaca in the category of keyword-burritos ... ehm ... whatever, let's not get 
- distracted. 
 TODO: Hero image - queen with reflection crazy alpaca
 
  
