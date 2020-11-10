@@ -91,8 +91,10 @@ the queens soul. She was foreseen to become the Queen of
 The queen, woken up by little Ints scream, slowly began to speak in a deep voice: "You freed me
 from my own curse, princess Dotty. I know that the Types want to live in a flourishing land and so may it be.
 You need to release the river of Runtime to flow through the kingdom to enter the era of generic programming". - 
-"Yeah, sure" said Sir Jon and laughed. "How could we forget about that?". The Types then went to the old dam that held
-backthe river of runtime and it released its refreshing energy into the kingdom of Compiletime. After that Dotty freed
+"Yeah, sure" said Sir Jon and laughed. "How could we forget about that?". 
+
+The Types then went to the old dam that held
+back the river of runtime and it released its refreshing energy into the kingdom of Compiletime. After that Dotty freed
 the queen and they celebrated a big party with Jon and the Types where they ate many
 [burritos](https://emorehouse.wescreates.wesleyan.edu/silliness/burrito_monads.pdf). Dotty had finally 
 [unioned](http://dotty.epfl.ch/docs/reference/new-types/union-types.html) all Types under the Queen of Mirrors
@@ -102,16 +104,16 @@ without any exceptions.
 
 </section>
 
-Even if it is only a tale that kids have been listening to for centuries there lies some truth within that you may think
-of while reading this post. Let's now dive into some new and old concepts before we get our hands dirty.
+Even if it is only a tale that kids have been listening to for centuries there lies some truth within that you may run 
+across while reading this post. Before we get our hands dirty let's dive into some new and old concepts first.
 
 ## Concepts
 
 ### Typeclasses
 
-The first important thing to understand is that of typeclasses. This is already known in the scala community. In case
-you didn't came across it yet let me introduce it to you. In this post we will implement the typeclass `PrettyString` 
-that looks like this: 
+The first important concept to understand is that of typeclasses. You might already know about it and if not don't worry. 
+I will show you how to use it and explain the new scala 3 syntax around typeclasses. Instead of talking about the theory
+behind typeclasses let's look at an example:  
 
 ```scala
 trait PrettyString[A] {
@@ -119,64 +121,12 @@ trait PrettyString[A] {
 }
 ```
 
-The `PrettyString` typeclass provides us with the ability to convert any type to a string. Imaging having a type that
-you can not extend e.g. `String` but you wan't to add some extra functionality in a way that also works for other types.
+Pretty simple, right? Just a simple interface with a type parameter `A` and a method that takes a parameter and returns
+`String`. So this provides us with the ability to convert any type `A` to a string. So why is that useful? 
+Imagine having a type that you can not extend e.g. `Int` or `String` but you want to add some extra functionality in a 
+way that also works for other types.
 
-That can be done by implementing the `PrettyString` trait from above for that type:
-
-```scala
-given stringAsPrettyString as PrettyString[String] {
-  // notice: string is printed in quotes - how pretty \o/
-  def prettyString(a: String): String = s""""$a"""" // triple quoted because we can't escape quotes in single quoted string
-}
-
-println(stringAsPrettyString.prettyString("hello world")) // prints "hello world"
-``` 
-
-You may now think "Great, this is like the `.toString` method, but much more difficult to use", 
-but calm down young padawan. First our `PrettyString` instance for `String` wraps the result in quotes 
-(yeah, awesome - i know) and second you will get to know the true power of typeclasses when you reach the 
-end of this post. If you wander what `given` means: This is the new way to define 
-
-To make the usage of the typeclass more convenient we will introduce a method that uses this typeclass to simply print 
-the pretty string to the console:
-
-```scala
-def prettyPrintln[A](a: A)(using prettyStringInstance: PrettyString[A]) = 
-  println(prettyStringInstance.prettyString(a))
-
-prettyPrintln("hello world")
-``` 
-
-## The Tuple <=> Case Class duality and Typeclasses TODO: typelevel strings, HLists
-
-Lets first check the underlying concepts. When looking at any case class we can also describe that case class by 
-breaking it down into its fields and represent it as a tuple as shown below.
-
-```scala
-case class User(name: String, age: Int) 
-val someUser: User = User(name = "Bob", age = 25)
-val someUserAsTuple: (String, Int) = ("Bob", 25)
-```
-
-So a case class is just a tuple with some labels and it's own type. But in terms of the underlying data, 
-which in this case are values of type String and Int, there is no difference between a tuple and a case class. 
-That means that we can also describe a case class by a tuple with some labels, which will be important later.
-
-The second important concept is that of typeclasses. Let's look at a simple typeclass:
-
-```scala
-trait PrettyString[A] {
-  def prettyString(a: A): String // when implemented, prints a type A in a pretty, human readable way
-}
-```
-
-The `PrettyString` typeclass provides us with the ability to convert any type to a string, which is similar to what
-the `.toString` method does, but we will do it in a more pretty way, e.g. also print the fieldnames of case classes, 
-wrap strings in quotes etc.
-
-Every typeclass is characterized by a generic type parameter `A` and some functions or values that it 
-provides (in our case `def prettyString`). The typeclass can then be used to implement instances for arbitrary types:
+That can be done by implementing the `PrettyString` trait from above for that types:
 
 ```scala
 val intPrettyString = 
@@ -184,48 +134,100 @@ val intPrettyString =
     def prettyString(a: Int): String  = a.toString
   }
 
-val stringPrettyString = 
-  new PrettyString[String] {
-    // notice: string is printed in quotes - how pretty \o/
-    def prettyString(a: String): String = s""""$a"""" // triple quoted because we can't escape in single quoted string
-  }
+val stringPrettyString = new PrettyString[String] {
+  def prettyString(a: String): String = "\"" + a + "\""
+}
 
-val userPrettyString = 
-  new PrettyString[User] {
-    def prettyString(a: User): String = 
-      s"User(name=${stringPrettyString.prettyString(a.name)}, age=${intPrettyString.prettyString(a.age)})"
-  }
-
-println(intPrettyString.prettyString(5)) // prints 5
+println(intPrettyString.prettyString(123)) // prints 123
 println(stringPrettyString.prettyString("hello world")) // prints "hello world"
-println(userPrettyString.prettyString(User("Bob", 25))) // prints User(name="Bob", age=25)
 ``` 
 
-So by defining the instances `intPrettyString`, `stringPrettyString` and `userPrettyString` we did provide the ability 
-to pretty print the types `Int`, `String` and `User`. What is also shown is that the typeclass instance for `User` is 
-(manually) derived from the instances for primitive types `Int` and `String`. In the end we will see how to do the 
-derivation automatically for any case class or sealed trait by using scala 3 tools.
+You may now think "Great, this is like the `.toString` method, but much more difficult to use", 
+but calm down young padawan. First our `PrettyString` instance for `String` wraps the result in quotes which `toString`
+does not (yeah, awesome - i know) and second you can do super cool stuff with it which we'll see later.
 
-# TODO
+But in the code above converting something to a string included a lot of boilerplate. Let's get rid of that.
 
-As shown above we did create a typeclass instance for `User` by hand but in scala 2 the libraries could to that 
-automatically by using macros (e.g. circe for json codecs or tapir for api descriptions). 
+### Implicits 3.0 - Give it, use it, quick enjoy it
 
-In Scala 2 the libraries used macros to achieve the automatic derivation from case classes or sealed traits which often 
-slowed down compile times and was difficult to implement. Magnolia, a library for generic derivation made that a lot 
-easier but it still depends on scala 2 macros which will no longer be supported in scala 3.
+You might have heard that in scala 3 implicits have been reworked to make their different meanings and use cases
+clearer. One of this use cases is typeclasses. Instead of using implicit here two new keywords were added:
+`given` and `using`.   
 
-To our rescue scala 3 has builtin derivation utilities. In the section below we will discover how to derive a typeclass
-instance for our `PrettyString` typeclass for any case class or sealed trait.
+To make printing the result of `PrettyString.prettyString` more pleasing let's introduce the method `prettyPrintln`. We
+will also **give** the compiler our `PrettyString` instances from above so that we can **use** them without explicitly
+handing them over to the `prettyPrintln` method. 
+
+```scala
+given intPrettyString as PrettyString[Int] {
+    def prettyString(a: Int): String = a.toString
+  }
+
+given stringPrettyString as PrettyString[String] {
+  def prettyString(a: String): String = "\"" + a + "\""
+}
+
+def prettyPrintln[A](a: A)(using prettyStringInstance: PrettyString[A]) = 
+  println(prettyStringInstance.prettyString(a))
+
+prettyPrintln(123) // prints 123
+prettyPrintln("hello world") // prints "hello world"
+
+// we can also pass the PrettyString instance explicitly
+prettyPrintln(123)(using intPrettyString)
+``` 
+
+The given syntax looks slightly strange at first sight, but you will get *used* to it pretty quickly. In scala 2 `given`
+and `using` would both have been `implicit` but in scala 3  it was reworked to clarify intent:
+`given` the instance `intPrettyString` we can call `prettyPrintln` `using` the `PrettyString` instance for the type
+`Int`. The compiler will then take care of passing the `intPrettyString` parameter to `prettyPrintln`.
+
+The next thing we will check out is the relation between case classes and tuples.
+
+## Singleton Types and The Literal Next Door
+
+Since Scala 2.13 literals do not only exist in the value space but also on type level. Each literal has it's
+corresponding counterpart in typelevel which is written exactly the same. So instead of writing `val myInt: Int = 1` you
+can be more precise by writing `val myInt: 1 = 1`. Of course if you would try `val myInt: 2 = 1` that would not compile.
+It also works with strings: `val helloWorld: "Hello world!" = "Hello world!"`.
+
+These typelevel representations of literals tend to get really helpful for things done at compiletime. E.g. they would
+allow us to create matrices of a known size and check at compiletime that they are multipliable, so that impossible 
+operations don't compile. 
+
+Literal types also allow us to bringt literals from typelevel to value level which will be important for the next step.
+
+So let's quickly recap what we've discovered so far: We learned that using typeclasses we can implement some 
+functionality for any type. We can then use these instances and implicitly pass them to methods via `given` and `using`. 
+And finally we know that literals can be presented in value and type space. Having that let's check how to automatically
+derive typeclasses for case classes and sealed traits.
 
 ## A look in the Mirror
 
-The tool that scala 3 provides us with that will allow us to do the derivation is the Mirror trait:
+Before we learn how to derive typeclasses automatically we will do it by hand once. Taking the 
+`case class User(name: String, age: Int)` let's define a `PrettyString` instance which also prints the labels
+of the case classes fields:
 
 ```scala
-// taken from https://dotty.epfl.ch/docs/reference/contextual/derivation.html
+given userPrettyString as PrettyString[User] {
+  def prettyString(a: User): String = 
+    s"User(name=${stringPrettyString.prettyString(a.name)}, age=${intPrettyString.prettyString(a.age)})"
+}
+```
 
-// shortened
+So to create the `userPrettyString` instance we used 3 kinds of informations: 
+- The label of the case class itself: "User"
+- The labels of the fields: "name" and "age"
+- The typeclass instances for the fields types: `stringPrettyString` and `intPrettyString`
+
+Please also note that we built this instance by composing the typeclasses for our primitive types `Int` and `String. 
+This is where the power of typeclasses comes into place, that you can compose them to generate new instances for complex
+types.
+
+To automate this process we will need a tool that provides us with that label and type information.
+This is were the scala 3 trait `Mirror` comes into place:
+
+```scala
 sealed trait Mirror {
   type MirroredType // the type that was mirrored itself
   type MirroredLabel <: String // the label of the mirrored type
@@ -234,20 +236,18 @@ sealed trait Mirror {
 }
 ```
 
-Ok, that's a lot of types. First thing to notice is that `Mirror` is providing us with *typelevel* information only. 
-Which makes sense, as the derivation of the typeclass happens at compiletime.
+Ok, that's a lot of types. The first thing to notice is that `Mirror` is providing us with *typelevel* information only. 
+Which makes sense, as the derivation of typeclasses happens at compiletime.
 
-So what do the different types mean:
+So what do the different types mean and how do they look for our `User` case class?
 
- - `MirroredType` - is just the type we are deriving from, e.g. our case class `User`
- - `MirroredLabel` - typelevel representation of the label of the type we mirror, so the string `"User"`
- - `MirroredElemLabels` - A Tuple that contains the member names at typelevel, so of type `("name", "age")`
+ - `MirroredType` - is just the type we are deriving from, so our case class `User`
+ - `MirroredLabel` - typelevel representation of the label of the type we mirror, so the literal type `"User"`
+ - `MirroredElemLabels` - A Tuple that contains the field names at typelevel (literal types again!), so of type `("name", "age")`
  - `MirroredElemTypes` - A tuple of all elements that `User` can be broken into: `(String, Int)` (for fields name and age)
  
-Now we've got some useful things, like the labels and the types of the individual elements that our type consist of. 
-But we still need some extra information if our type is a case class or a sealed trait. 
- 
-Thankfully two traits extend `Mirror` which are:
+Now we've got some the labels and types that our `User` consist of. But we still need some extra information: 
+Is our type a case class or a sealed trait? Thankfully two traits extend `Mirror` which are:
  
  ```scala
 // represents a case class
@@ -261,13 +261,14 @@ trait Sum extends Mirror { self =>
 }
  ```
  
-Yay, we can distinguish between case classes and sealed traits! A small site note: Case classes are also called product
-types and sealed traits sum types (hence the naming of the traits). Also we've got some methods that we can call at
-runtime: For `Product` a method to assemble the type from its elements and for `Sum` one that gives us the 
+Ok, now we can distinguish also between case classes and sealed traits! 
+Small side note: Case classes are also called product types and sealed traits sum types
+(hence the naming of the traits). Also we've got some methods that we can call which will be important later.
+: For `Product` a method to assemble the type from its elements and for `Sum` one that gives us the 
 ordinal of a member of the respective sealed trait.
 
 Let's now recheck how the Mirror type would look like for our `User` case class leaving out the `fromProduct` 
-method which is not relevant for now.
+method which is not relevant right now.
 
 ```scala
 import scala.compiletime.Mirror
@@ -281,7 +282,7 @@ trait UserMirror extends Mirror.Product {
 }
 ```
 
-Ok that doesn't look to complicated. We have all the information in place that we would need to automatically 
+Ok that doesn't look too complicated. We have all the information in place that we would need to automatically 
 derive the `PrettyString` instance for `User`. But the information is still at the type level. We need to bring it to 
 the value level to work with it at runtime. Let's start with the label of the type itself:
 
