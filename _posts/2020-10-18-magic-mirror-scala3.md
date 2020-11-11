@@ -493,11 +493,137 @@ What we still didn't use is the `fromProduct` method from the `Product` trait. U
 which the `Product` trait mirrors. This must be used when creating instances for things like a JSON codec where you need
 to assemble a case class from a collection of fields. As this blog post is already super long i will not show it here
 but instead show you some code that i wrote to make the derivation much easier by abstracting away all the methods we 
-discussed above. It was strongly inspired by the [magnolia] library and allows you to ad automatic derivation to your
-typeclass by implementing two simple methods:
+discussed above. It was heavily inspired by the [magnolia] library and allows you to add automatic derivation to your
+typeclass by implementing two simple methods: `deriveCaseClass` and `deriveSealed`
 
 ```scala
+import scala.deriving.Mirror
+import scala.compiletime.{constValue, erasedValue, summonInline}
 
+/**************************** trait to be used for simple derivation below **************************/
+
+trait EasyDerive[TC[_]] {
+  final def apply[A](using tc: TC[A]): TC[A] = tc
+
+  case class CaseClassElement[A, B](label: String, typeclass: TC[B], getValue: A => B, idx: Int)
+  case class CaseClassType[A](label: String, elements: List[CaseClassElement[A, _]], fromElements: List[Any] => A)
+
+  case class SealedElement[A, B](label: String, typeclass: TC[B], idx: Int, cast: A => B)
+  case class SealedType[A](label: String, elements: List[SealedElement[A, _]], getElement: A => SealedElement[A, _])
+
+  inline def getInstances[A <: Tuple]: List[TC[Any]] = inline erasedValue[A] match {
+    case _: EmptyTuple => Nil
+    case _: (t *: ts) => summonInline[TC[t]].asInstanceOf[TC[Any]] :: getInstances[ts]
+  }
+
+  inline def getElemLabels[A <: Tuple]: List[String] = inline erasedValue[A] match {
+    case _: EmptyTuple => Nil
+    case _: (t *: ts) => constValue[t].toString :: getElemLabels[ts]
+  }
+
+  def deriveCaseClass[A](caseClassType: CaseClassType[A]): TC[A]
+
+  def deriveSealed[A](sealedType: SealedType[A]): TC[A]
+
+  inline given derived[A](using m: Mirror.Of[A]) as TC[A] = {
+    val label = constValue[m.MirroredLabel]
+    val elemInstances = getInstances[m.MirroredElemTypes]
+    val elemLabels = getElemLabels[m.MirroredElemLabels]
+
+    inline m match {
+      case s: Mirror.SumOf[A] =>
+        val elements = elemInstances.zip(elemLabels).zipWithIndex.map{ case ((inst, lbl), idx) =>
+          SealedElement[A, Any](lbl, inst.asInstanceOf[TC[Any]], idx, identity)
+        }
+        val getElement = (a: A) => elements(s.ordinal(a))
+        deriveSealed(SealedType[A](label, elements, getElement))
+
+      case p: Mirror.ProductOf[A] =>
+        val caseClassElements =
+          elemInstances
+            .zip(elemLabels)
+            .zipWithIndex.map{ case ((inst, lbl), idx) =>
+              CaseClassElement[A, Any](lbl, inst.asInstanceOf[TC[Any]],
+                (x: Any) => x.asInstanceOf[Product].productElement(idx), idx)
+            }
+        val fromElements: List[Any] => A = { elements =>
+          val product: Product = new Product {
+            override def productArity: Int = caseClassElements.size
+
+            override def productElement(n: Int): Any = elements(n)
+
+            override def canEqual(that: Any): Boolean = false
+          }
+          p.fromProduct(product)
+        }
+        deriveCaseClass(CaseClassType[A](label, caseClassElements, fromElements))
+    }
+  }
+}
+
+/**************************** define typeclass and derivation **************************/
+
+trait PrettyString[A] {
+  def prettyString(a: A): String
+}
+
+object PrettyString extends EasyDerive[PrettyString] {
+  override def deriveCaseClass[A](productType: CaseClassType[A]): PrettyString[A] = new PrettyString[A] {
+    override def prettyString(a: A): String = {
+      if (productType.elements.isEmpty) productType.label
+      else productType.elements.map(p => s"${p.label}=${p.typeclass.prettyString(p.getValue(a))}").mkString(
+        s"${productType.label}(",
+        ", ",
+        ")"
+      )
+    }
+  }
+
+  override def deriveSealed[A](sumType: SealedType[A]): PrettyString[A] = new PrettyString[A] {
+    override def prettyString(a: A): String = {
+      val elem = sumType.getElement(a)
+      elem.typeclass.prettyString(elem.cast(a))
+    }
+  }
+
+  // some instances for primitive types
+
+  given stringPrettyString as PrettyString[String] {
+    def prettyString(x: String): String = s""""x""""
+  }
+
+  given intPrettyString as PrettyString[Int] {
+    def prettyString(x: Int): String = x.toString
+  }
+
+  given longPrettyString as PrettyString[Long] {
+    def prettyString(x: Long): String = x.toString
+  }
+
+  given doublePrettyString as PrettyString[Double] {
+    def prettyString(x: Double): String = x.toString
+  }
+
+  given booleanPrettyString as PrettyString[Boolean] {
+    def prettyString(x: Boolean): String = x.toString
+  }
+}
+
+/************************************** Use it *****************************************/
+
+enum Visitor derives PrettyString {
+  case User(name: String, age: Int)
+  case AnonymousVisitor
+}
+
+import Visitor._
+
+val someVisitors = List(
+  User("bob", 25),
+  AnonymousVisitor
+)
+
+someVisitors.foreach(prettyPrintln)
 ```
 
 So, i hope you you enjoyed the post. Feel free to ask questions in the comment section or reach out to me 
