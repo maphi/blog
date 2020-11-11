@@ -17,13 +17,13 @@ tags:
 # Mirror, mirror on the Wall, Who's the Genericioust of Them All? - Generic Programming with Scala 3
 
 Scala 3 (previously called [dotty](https://dotty.epfl.ch/)) is approaching its [release](https://dotty.epfl.ch/blog/2020/09/21/naming-schema-change.html)!
-This is a good opportunity to have a deeper look on some new features that it offers. For me one of the most exiting
+This is a good opportunity to have a deeper look at some new features it offers. For me one of the most exiting
 features are the new metaprogramming abilities that scala 3 offers. Did you ever wonder how json libraries derive 
 codecs for you from case classes and sealed traits? Or how tapir generates a whole OpenAPI documentation from your 
-endpoint definitions? In this blog post we will discover how to do that in scala 3 and discover some new lange features
-like given, singleton types, reworked tuples, the exiting new enum definitions and finally the Mirror trait that allows 
-us to derive typeclass instances automatically for our data types. If you haven't heard of these things yet, don't be
-afraid. We will dive into the new scala version step by step. Even if the concepts of this post are between intermediate
+endpoint definitions? In this blog post we will discover how to do things like that in scala 3 and discover some new 
+language features like given, singleton types, reworked tuples, the exiting new enum definitions and finally the Mirror 
+trait that allows us to derive typeclass instances automatically for our data types. If you haven't heard of these things
+yet, don't be afraid. We will dive into them step by step. Even if the concepts of this post are between intermediate
 to advanced level, i will try to explain it so that it is also understandable for people that already got some
 experience with scala but haven't explored these concepts yet. If there is something you do not understand please don't
 hesitate to [ask](TODO).    
@@ -496,6 +496,8 @@ enum Visitor derives PrettyString {
   case AnonymousVisitor
 }
 ```
+
+TODO: Schlusssatz
 
 TODO: shoutout to miles for shapeless, jon for magnolia, library maintainers for scala3 migration, hope overcome split in scala like usa 
 
