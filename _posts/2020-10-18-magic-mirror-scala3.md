@@ -22,7 +22,7 @@ features are the new metaprogramming abilities that scala 3 offers. Did you ever
 codecs for you from case classes and sealed traits? Or how tapir generates a whole OpenAPI documentation from your 
 endpoint definitions? In this blog post we will discover how to do that in scala 3 and discover some new lange features
 like given, singleton types, reworked tuples, the exiting new enum definitions and finally the Mirror trait that allows 
-us to derive typeclass instances automatically for our data types. If you haven't heard of this things yet, don't be
+us to derive typeclass instances automatically for our data types. If you haven't heard of these things yet, don't be
 afraid. We will dive into the new scala version step by step. Even if the concepts of this post are between intermediate
 to advanced level, i will try to explain it so that it is also understandable for people that already got some
 experience with scala but haven't explored these concepts yet. If there is something you do not understand please don't
@@ -35,23 +35,23 @@ clicking [here](TODO).
 ## Princess Dotty, Sir Jon and the Queen of Reflection
 
 Once upon a time in the land of Scala there lived a brave knight. His name was Sir Jon but most people just called him [The Pretty](https://twitter.com/propensive). 
-He was the defender of a poor folk which called itself "The Types". Many year ago they were abducted from the kingdom of
+He was the defender of a poor folk which called itself "The Types". Many years ago they were abducted from the kingdom of
 [Compiletime](https://dotty.epfl.ch/docs/reference/metaprogramming/inline.html#the-scalacompiletime-package)
 by the evil Queen of Reflection. The queen ruled with terrible harshness. Everyone who tried to flee 
 from her frightening reign would be thrown into the river of Runtime, that flowed into the great log pool, to never be
 seen again. 
  
-Sir Jons plan was to build an army in secret, but he knew that a direct fight with the queen would not be possible. The
+Sir Jon's plan was to build an army in secret, but he knew that a direct fight with the queen would not be possible. The
 queen was guarded by an army of dreaded demons which were called "The Exceptions" by the people, who did not dare to
-pronounce their names. That why he thought of a smart plan: On the foundations of the [isle M'Sabin](https://twitter.com/milessabin), 
-that was hidden from the evil queens henchmen behind the [shapeless](https://github.com/milessabin/shapeless) clouds,
+pronounce their names. That's why he thought of a smart plan: On the foundations of the [isle M'Sabin](https://twitter.com/milessabin), 
+that was hidden from the evil queen's henchmen behind the [shapeless](https://github.com/milessabin/shapeless) clouds,
 he built the library [Magnolia](https://github.com/propensive/magnolia). From there he twittered his wise words all 
 around the community of types, that came to learn at his [zone](https://scala.zone/). He would teach each Type how to 
-`summon` their birth-`given` instance to defend themselves from the queens army.
+`summon` their birth-`given` instance to defend themselves from the queen's army.
 
 But the queen became aware of Jons plan to start a revolution and she casted a curse on the land that would 
 terribly slow down any Type trying to summon its instance, which caused lots of compiletime. When Jon became aware of 
-the curse he desperately began to search for a cure. His old friend, the wizard M'acrowas a skilled witcher and wise 
+the curse he desperately began to search for a cure. His old friend, the wizard M'acro was a skilled witcher and wise 
 man but the reign of the queen had exhausted his power, and he was approaching his
 [last days in the 2nd age]((http://dotty.epfl.ch/docs/reference/dropped-features/macros.html)) of Scala. 
 Jon didn't knew what to do and was close to giving up when a small primitive Type named Boo Lean approached 
@@ -66,11 +66,11 @@ was surprised that the well-known knight asked her for help as she was still a y
 outside of her village yet, but after Jon told her the story she began to smile. 
 
 Her mother Java had given her a magic mirror before she passed away. Java told young Dotty that everyone looking 
-in the mirror will see his soul breaking into its elementary parts andface their real self, as good or as
-bad like it is. 
+in the mirror will see his soul breaking into its elementary parts and face their real self, as good or as
+bad as it is.
 
-The following day Jon and Dotty made up a plan to speak up at the next audience of the queen under the excuse to
-surrender. At the audience they gave the queen Dottys mirror as a gift to soothe her. The queen then in her arrogance
+The following day Jon and Dotty came up with a plan to speak up at the next audience of the queen under the excuse to
+surrender. At the audience they gave the queen Dotty's mirror as a gift to soothe her. The queen then in her arrogance
 and with a toxic smile in her face began to unwrap the gift. But at the first blink the mirror immediately released its
 [fury](https://github.com/propensive/fury). The queen was shaken by her own reflection and screamed in agony as she 
 realized that Dotty and Jon had tricked her. The magic of the mirror quickly made her fall asleep. Jon and Dotty 
@@ -78,13 +78,13 @@ imprisoned the queen in a trifold [IO-Monad](https://zio.dev/) guarded by the my
 [Cats](https://typelevel.org/cats-effect) of [Monix](https://monix.io/) so that she no longer could cause any 
 side effects. 
 
-When they heard of Dottys and Jons victory over the queen the Types started dancing and went on a march back to their
+When they heard of Dotty's and Jon's victory over the queen the Types started dancing and went on a march back to their
 kingdom of Compiletime. But as they approached the border, they realized that the land had dried over time. 
 They started searching for the [stream](https://fs2.io/) that had once fed them and the 
 [Alp](https://doc.akka.io/docs/alpakka/current/index.html) [akkas](https://akka.io/) nearby. 
 
 After three days of search, thirsty and exhausted, Dotty all of a sudden noticed that the queen, still trapped inside 
-the IO-Monad, slightly started to glow. The magic sleep seemed to heal the broken parts of the queens soul. 
+the IO-Monad, slightly started to glow. The magic sleep seemed to heal the broken parts of the queen's soul. 
 Little Boo Lean then remembered that in the prophecy of Odersky the magic mirror was told to be able to invert 
 the queens soul. She was foreseen to become the Queen of 
 [Mirror](http://dotty.epfl.ch/docs/reference/contextual/derivation.html), a righteous and kindly ruler!
@@ -160,8 +160,8 @@ handing them over to the `prettyPrintln` method.
 
 ```scala
 given intPrettyString as PrettyString[Int] {
-    def prettyString(a: Int): String = a.toString
-  }
+  def prettyString(a: Int): String = a.toString
+}
 
 given stringPrettyString as PrettyString[String] {
   def prettyString(a: String): String = "\"" + a + "\""
@@ -215,12 +215,12 @@ given userPrettyString as PrettyString[User] {
 }
 ```
 
-So to create the `userPrettyString` instance we used 3 kinds of informations: 
+So to create the `userPrettyString` instance we used 3 kinds of information: 
 - The label of the case class itself: "User"
 - The labels of the fields: "name" and "age"
 - The typeclass instances for the fields types: `stringPrettyString` and `intPrettyString`
 
-Please also note that we built this instance by composing the typeclasses for our primitive types `Int` and `String. 
+Please also note that we built this instance by composing the typeclasses for our primitive types `Int` and `String`. 
 This is where the power of typeclasses comes into place, that you can compose them to generate new instances for complex
 types.
 
@@ -246,10 +246,10 @@ So what do the different types mean and how do they look for our `User` case cla
  - `MirroredElemLabels` - A Tuple that contains the field names at typelevel (literal types again!), so of type `("name", "age")`
  - `MirroredElemTypes` - A tuple of all elements that `User` can be broken into: `(String, Int)` (for fields name and age)
  
-Now we've got some the labels and types that our `User` consist of. But we still need some extra information: 
+Now we've got the labels and types that our `User` consist of. But we still need some extra information: 
 Is our type a case class or a sealed trait? Thankfully two traits extend `Mirror` which are:
  
- ```scala
+```scala
 // represents a case class
 trait Product extends Mirror {
  def fromProduct(p: scala.Product): MirroredType
@@ -259,9 +259,9 @@ trait Product extends Mirror {
 trait Sum extends Mirror { self =>
  def ordinal(x: MirroredType): Int
 }
- ```
+```
  
-Ok, now we can distinguish also between case classes and sealed traits! 
+Ok, now we can also distinguish between case classes and sealed traits! 
 Small side note: Case classes are also called product types and sealed traits sum types
 (hence the naming of the traits). Also we've got some methods that we can call which will be important later.
 : For `Product` a method to assemble the type from its elements and for `Sum` one that gives us the 
@@ -460,10 +460,10 @@ visitors.foreach(visitor =>
            AnonymousVisitor()  
 ```
 
-Ok fine, but wait! Where are these brackets behind "AnonymousVisitor" coming from? This is because `AnonymousVisitor`
-is a case object which is from the compiler treated like a case class with zero elements. So in the derivation process
+Ok fine, but wait! Where are these parantheses behind "AnonymousVisitor" coming from? This is because `AnonymousVisitor`
+is a case object which the compiler treates as a case class with zero elements. So in the derivation process
 for `AnonymousVisitor` it will create an instance for a product type, that as we defined it above prints also the 
-brackets. Let's quickly fix that:
+parantheses. Let's quickly fix that:
 
 ```scala
 inline def derivePrettyString[A](using m: Mirror.ProductOf[A]) =
@@ -486,7 +486,7 @@ inline def derivePrettyString[A](using m: Mirror.ProductOf[A]) =
      }
 ```
 
-Now our derived instance will print "AnonymousVisitor" without the brackets! If you wan't to have the best experience
+Now our derived instance will print "AnonymousVisitor" without the parantheses! If you wan't to have the best experience
 when using automated derivation you should put the `derived` method in the companion object of your typeclass. After 
 doing that you can easily have an instance created automatically by writing:
 
