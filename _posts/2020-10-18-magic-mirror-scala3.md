@@ -14,24 +14,21 @@ tags:
   @import url('https://fonts.googleapis.com/css2?family=Lora:ital@1&display=swap');
 </style> 
 
-# Mirror, mirror on the Wall, Who's the Genericioust of Them All? - Generic Programming with Scala 3
-
 Scala 3 (previously called [dotty](https://dotty.epfl.ch/)) is approaching its [release](https://dotty.epfl.ch/blog/2020/09/21/naming-schema-change.html)!
 This is a good opportunity to have a deeper look at some new features it offers. For me one of the most exiting
-features are the new metaprogramming abilities that scala 3 offers. Did you ever wonder how json libraries derive 
+features are the new metaprogramming abilities that Scala 3 offers. Did you ever wonder how json libraries derive 
 codecs for you from case classes and sealed traits? Or how tapir generates a whole OpenAPI documentation from your 
-endpoint definitions? In this blog post we will discover how to do things like that in scala 3 and discover some new 
+endpoint definitions? In this blog post we will discover how to do things like that in Scala 3 and discover some new 
 language features like given, singleton types, reworked tuples, the exiting new enum definitions and finally the Mirror 
 trait that allows us to derive typeclass instances automatically for our data types. If you haven't heard of these things
 yet, don't be afraid. We will dive into them step by step. Even if the concepts of this post are between intermediate
 to advanced level, i will try to explain it so that it is also understandable for people that already got some
-experience with scala but haven't explored these concepts yet. If there is something you do not understand please don't
+experience with Scala but haven't explored these concepts yet. If there is something you do not understand please don't
 hesitate to [ask](TODO).    
 
 But before we start let me tell you the tale of princess Dotty. For the impatient reader: You can skip the tale by
 clicking [here](TODO). 
 
-<section style="font-family: 'Lora', serif;">
 ## Princess Dotty, Sir Jon and the Queen of Reflection
 
 Once upon a time in the land of Scala there lived a brave knight. His name was Sir Jon, but most people just called him [The Pretty](https://twitter.com/propensive). 
@@ -74,7 +71,7 @@ surrender. At the audience they gave the queen Dotty's mirror as a gift. The que
 and with a toxic smile in her face began to unwrap the gift. But at the first blink the mirror immediately released its
 [fury](https://github.com/propensive/fury). The queen was shaken by her own reflection and screamed in agony as she 
 realized that Dotty and Jon had tricked her. The magic of the mirror quickly made her fall asleep. Jon and Dotty 
-imprisoned the queen in a trifold [IO-Monad](https://zio.dev/) guarded by the mystic
+imprisoned the queen in a [trifold IO-Monad](https://zio.dev/) guarded by the mystic
 [Cats](https://typelevel.org/cats-effect) of [Monix](https://monix.io/) so that she no longer could cause any 
 side effects. 
 
@@ -102,8 +99,6 @@ like the prophecy of Odersky foresaw. And they lived in
 [equality](http://dotty.epfl.ch/docs/reference/contextual/multiversal-equality.html) happily ever after,
 without any exceptions.
 
-</section>
-
 Even if it is only a tale that kids have been listening to for centuries there lies some truth within that you may run 
 across while reading this post. But before we get our hands dirty let's dive into some new and old concepts first.
 
@@ -112,7 +107,7 @@ across while reading this post. But before we get our hands dirty let's dive int
 ### Typeclasses
 
 The first important concept to understand is that of typeclasses. You might already know about it and if not don't worry. 
-I will show you how to use it and explain the new scala 3 syntax around typeclasses. Instead of talking about the theory
+I will show you how to use it and explain the new Scala 3 syntax around typeclasses. Instead of talking about the theory
 behind typeclasses let's look at an example:  
 
 ```scala
@@ -150,7 +145,7 @@ But in the code above converting something to a string included a lot of boilerp
 
 ### Implicits 3.0 - Give it, use it, quick enjoy it
 
-You might have heard that in scala 3 implicits have been reworked to make their different meanings and use cases
+You might have heard that in Scala 3 implicits have been reworked to make their different meanings and use cases
 clearer. One of these use cases is typeclasses. Instead of using implicit here two new keywords were added:
 `given` and `using`.   
 
@@ -177,8 +172,8 @@ prettyPrintln("hello world") // prints "hello world"
 prettyPrintln(123)(using intPrettyString)
 ``` 
 
-The given syntax looks slightly strange at first sight, but you will get *used* to it pretty quickly. In scala 2 `given`
-and `using` would both have been `implicit` but in scala 3  it was reworked to clarify intent:
+The given syntax looks slightly strange at first sight, but you will get *used* to it pretty quickly. In Scala 2 `given`
+and `using` would both have been `implicit` but in Scala 3  it was reworked to clarify intent:
 `given` the instance `intPrettyString` we can call `prettyPrintln` `using` the `PrettyString` instance for the type
 `Int`. The compiler will then take care of passing the `intPrettyString` parameter to `prettyPrintln`.
 
@@ -186,17 +181,17 @@ We need one last thing before we can start. Let's check out literal types.
 
 ## Singleton Types and The Literal Next Door
 
-Since Scala 2.13 literals do not only exist in the value space but also on typelevel. Each literal has it's
-corresponding counterpart at typelevel which is written exactly in the same way. So instead of writing 
+Since Scala 2.13 literals do not only exist in the value space but also on type-level. Each literal has it's
+corresponding counterpart at type-level which is written exactly in the same way. So instead of writing 
 `val myInt: Int = 1` you can be more precise by writing `val myInt: 1 = 1`. Of course if you would try 
 `val myInt: 2 = 1` that would not compile. It also works with strings: 
 `val helloWorld: "Hello world!" = "Hello world!"`.
 
-These typelevel representations of literals tend to become really helpful for things that are done at compiletime. E.g.
+These type-level representations of literals tend to become really helpful for things that are done at compiletime. E.g.
 they would allow us to create matrices of a known size and check at compiletime that they are multipliable. Illegal
 operations would simply not compile at all. 
 
-Literal types also allow us to bringt literals from typelevel to value level which will be important in the next step.
+Literal types also allow us to bringt literals from type-level to value-level which will be important in the next step.
 
 So let's quickly recap what we've discovered so far: We've learned that using typeclasses we can implement additional 
 functionality for each type. We can then use the typeclass instances and implicitly pass them to methods via `given` 
@@ -225,7 +220,7 @@ Please also note that we built this instance by composing the typeclasses for ou
 This is where typeclasses shine. You can derive typeclasse instances for complex types from simpler ones.
 
 To automate this process we will need a tool that provides us with that label and type information.
-This is where the scala 3 trait `Mirror` comes into place:
+This is where the Scala 3 trait `Mirror` comes into place:
 
 ```scala
 sealed trait Mirror {
@@ -236,14 +231,14 @@ sealed trait Mirror {
 }
 ```
 
-Ok, that's a lot of types. The first thing to not here is that the `Mirror` trait is providing *typelevel* information
+Ok, that's a lot of types. The first thing to not here is that the `Mirror` trait is providing *type-level* information
 only. Which makes sense, as the derivation of typeclasses happens at compiletime.
 
 So what do the different types mean and how do they look for our `User` case class?
 
  - `MirroredType` - is just the type we are deriving from, so our case class `User`
- - `MirroredLabel` - typelevel representation of the label of the type we are mirroring, so the literal type `"User"`
- - `MirroredElemLabels` - A Tuple that contains the field names at typelevel (literal types again!), so of type `("name", "age")`
+ - `MirroredLabel` - type-level representation of the label of the type we are mirroring, so the literal type `"User"`
+ - `MirroredElemLabels` - A Tuple that contains the field names at type-level (literal types again!), so of type `("name", "age")`
  - `MirroredElemTypes` - A tuple of all elements that `User` can be broken into: `(String, Int)` (for fields name and age)
  
 Now we've got the labels and types that our `User` consist of. But we still need some extra information: 
@@ -283,8 +278,8 @@ trait UserMirror extends Mirror.Product {
 ```
 
 Ok, doesn't look too complicated! We have all the information in place that we would need to automatically 
-derive the `PrettyString` instance for `User`. But the information is still at the typelevel. We need to bring it to 
-the value level to work with it at runtime. Let's start with the label of the type itself:
+derive the `PrettyString` instance for `User`. But the information is still at the type-level. We need to bring it to 
+the value-level to work with it at runtime. Let's start with the label of the type itself:
 
 ```scala
 import scala.compiletime.constValue
@@ -296,7 +291,7 @@ println(labelFromMirror[User]) // prints User
 ```
 
 This was pretty easy. We just pass our `labelFromMirror` the mirror as an argument and it will use the `constValue` 
-function that we discussed before to summon the value from the type level. The keyword `inline` is needed here because
+method that we discussed before to summon the value from the type-level. The keyword `inline` is needed here because
 the compiler needs to resolve `constValue` statically and inline it at compiletime which the keyword makes
 possible. 
 
@@ -306,25 +301,26 @@ and create a simple `List[String]` out of that by using a recursive method:
 ```scala
 import scala.compiletime.erasedValue
 
-inline def summonElemLabels[A <: Tuple]: List[String] = inline erasedValue[A] match {
+inline def getElemLabels[A <: Tuple]: List[String] = inline erasedValue[A] match {
   case _: EmptyTuple => Nil // stop condition - the tuple is empty
-  case _: (t *: ts) => 
-    val headElementLabel = constValue[t].toString // bring the head label to value space
-    val tailElementLabels = summonElemLabels[ts] // recursive call to get the labels from the tail
+  case _: (head *: tail) =>  // yes, in scala 3 we can match on tuples head and tail to deconstruct them step by step
+    val headElementLabel = constValue[head].toString // bring the head label to value space
+    val tailElementLabels = getElemLabels[tail] // recursive call to get the labels from the tail
     headElementLabel :: tailElementLabels // concat head + tail
 }
 
-inline def summonElemLabelsHelper[A](using m: Mirror.Of[A]) = // helper method to get the mirror from compiler
-  summonElemLabels[m.MirroredElemLabels] // and call summonElemLabels with the elemlabels type
+// helper method to get the mirror from compiler
+inline def getElemLabelsHelper[A](using m: Mirror.Of[A]) = 
+  getElemLabels[m.MirroredElemLabels] // and call getElemLabels with the elemlabels type
 
-val userElementLabels = summonElemLabelsHelper[User] // List("name", "age")
+val userElementLabels = getElemLabelsHelper[User] // List("name", "age")
 ```
 
 Ah ... yes. Let me say it like this: To make the compiler happy we need to feed it a lot of `inline` keywords here.
-In terms of automatic derivation the scala compiler is just a hungry alpaca in the category of keywords ...
+In terms of automatic derivation the Scala compiler is just a hungry alpaca in the category of keywords ...
 ehm ... whatever. Let's not get distracted. 
 
-The most interesting thing here is the trick with the `erasedValue`function. It allows us to create a **virtual** 
+The most interesting thing here is the trick with the `erasedValue` method. It allows us to create a **virtual** 
 instance of the type `A` and match on it. Virtual means that this is done at compiletime and there is no actual value 
 to be matched on at runtime. It is just resolved statically by the compiler looking only at the types. This allows us to
 deconstruct the tuple step by step during compilation.
@@ -335,35 +331,37 @@ Gathering them can be done like this:
 ```scala
 import scala.compiletime.summonInline
 
-inline def summonInstances[A <: Tuple]: List[PrettyString[Any]] = inline erasedValue[A] match {
+inline def getTypeclassInstances[A <: Tuple]: List[PrettyString[Any]] = inline erasedValue[A] match {
   case _: EmptyTuple => Nil
-  case _: (t *: ts) => 
-    val headTypeClass = summonInline[PrettyString[t]] // summon was known as implicitly in scala 2
-    val tailTypeClasses = summonInstances[ts] // recursive call to resolve also the tail
-    headTypeClass.asInstanceOf[PrettyString[Any]] :: summonInstances[ts]
+  case _: (head *: tail) => 
+    val headTypeClass = summonInline[PrettyString[head]] // summon was known as implicitly in scala 2
+    val tailTypeClasses = getTypeclassInstances[tail] // recursive call to resolve also the tail
+    headTypeClass.asInstanceOf[PrettyString[Any]] :: getTypeclassInstances[tail]
 }
-inline def summonInstancesHelper[A](using m: Mirror.Of[A]) = // helper again
-   summonInstances[m.MirroredElemTypes]
+
+// helper method like before
+inline def summonInstancesHelper[A](using m: Mirror.Of[A]) = 
+   getTypeclassInstances[m.MirroredElemTypes]
 
 val userInstances: List[PrettyString[Any]] = 
   summonInstancesHelper[User] // List(stringPrettyString, intPrettyString)
 ```
 
-This is very similar to the `summonElemLabels` method. It recurses through the elements types tuple and summons the 
+This is very similar to the `getElemLabels` method. It recurses through the elements types tuple and summons the 
 respective typeclass instances for the individual elements. The method `summon` was introduced in dotty to clean up with
-the different meanings of implicits in scala 2. In scala 3 typeclass instances no longer use `implicit` as keyword but 
+the different meanings of implicits in Scala 2. In Scala 3 typeclass instances no longer use `implicit` as keyword but 
 `given` instead. And the method to fetch the instance is called `summon` and does the exact same things as `implicitly`
-did in scala 2. And of couse it needs to be inlined again, so we need to use not `summon` but `summonInline`. 
+did in Scala 2. And of couse it needs to be inlined again, so we need to use not `summon` but `summonInline`. 
 Right now we got all the information in place that we need for the generic derivation. Let's implement it:
 
 ```scala
-inline def derivePrettyString[A](using m: Mirror.ProductOf[A]) =
+inline def derivePrettyStringCaseClass[A](using m: Mirror.ProductOf[A]) =
      new PrettyString[A] {
        def prettyString(a: A): String = { 
          val label = labelFromMirror[m.MirroredType]
-         val elemLabels = summonElemLabels[m.MirroredElemLabels]
-         val elemInstances = summonInstances[m.MirroredElemTypes]
-         val elems = a.asInstanceOf[Product].productIterator // every case class extends scala.Product, we can safely cast here
+         val elemLabels = getElemLabels[m.MirroredElemLabels]
+         val elemInstances = getTypeclassInstances[m.MirroredElemTypes]
+         val elems = a.asInstanceOf[Product].productIterator // every case class implements scala.Product, we can safely cast here
          val elemStrings = elems.zip(elemLabels).zip(elemInstances).map{
            case ((elem, label), instance) => s"$label=${instance.prettyString(elem)}"
          }     
@@ -371,7 +369,7 @@ inline def derivePrettyString[A](using m: Mirror.ProductOf[A]) =
        }
      }
 
-val userPrettyString = derivePrettyString[User]
+val userPrettyString = derivePrettyStringCaseClass[User]
 ```
 
 We are just gathering the information and then iterating over the elements of the case class with the `productIterator`
@@ -379,7 +377,7 @@ method from `scala.Product` that returns an iterator of all elements of that cas
 labels and instances we can assemble our super pretty string typeclass:
 
 ```scala
-val userPrettyString = derivePrettyString[User]
+val userPrettyString = derivePrettyStringCaseClass[User]
 
 println(userPrettyString.prettyString(User("Bob", 25))) // prints User(name="Bob", age=25)
 ```
@@ -397,7 +395,7 @@ sealed trait Visitor
 case class User(name: String, age: Int) extends Visitor // User like before, but extending Visitor
 case object AnonymousVisitor extends Visitor // A user that is not registered visiting our website
 
-// Btw. in scala 3 you can write sealed traits also with the new enum syntax which is super lean:
+// Btw. in Scala 3 you can write sealed traits also with the new enum syntax which is super lean:
 enum Visitor {
   case User(name: String, age: Int)
   case AnonymousVisitor
@@ -413,8 +411,8 @@ inline def derivePrettyStringSealedTrait[A](using m: Mirror.SumOf[A]) =
   new PrettyString[A] {
     def prettyString(a: A): String = { 
       // val label = labelFromMirror[m.MirroredType] - not needed
-      // val elemLabels = summonElemLabels[m.MirroredElemLabels] - not needed
-      val elemInstances = summonInstances[m.MirroredElemTypes] // same as for the case class
+      // val elemLabels = getElemLabels[m.MirroredElemLabels] - not needed
+      val elemInstances = getTypeclassInstances[m.MirroredElemTypes] // same as for the case class
       val elemOrdinal = m.ordinal(a) // Checks the ordinal of the type, e.g. 0 for User or 1 for AnonymousVisitor
   
       // just return the result of prettyString from the right element instance
@@ -427,11 +425,11 @@ Using that on our sealed trait will not work yet because it also contains case c
 derivation of both, case classes and sealed traits first in a separate `given` method:
 
 ```scala
-// in scala 2 this would have been: implicit def derived[A](implicit m: Mirror.Of[A]): PrettyString[A]
+// in Scala 2 this would have been: implicit def derived[A](implicit m: Mirror.Of[A]): PrettyString[A]
 inline given derived[A](using m: Mirror.Of[A]) as PrettyString[A] =
   inline m match {
     case s: Mirror.SumOf[A]     => derivePrettyStringSealedTrait(using s)
-    case p: Mirror.ProductOf[A] => derivePrettyString(using p)
+    case p: Mirror.ProductOf[A] => derivePrettyStringCaseClass(using p)
   }
 ```
 
@@ -453,17 +451,17 @@ visitors.foreach(visitor =>
 ```
 
 Ok fine, but wait! Where are these parantheses behind "AnonymousVisitor" coming from? This is because `AnonymousVisitor`
-is a case object which the compiler treates as a case class with zero elements. So in the derivation process
+is a case object which the compiler treates as a case class with zero fields. So in the derivation process
 for `AnonymousVisitor` it will create an instance for a case class, that as we defined it above prints also the 
 parantheses. Let's quickly fix that:
 
 ```scala
-inline def derivePrettyString[A](using m: Mirror.ProductOf[A]) =
+inline def derivePrettyStringCaseClass[A](using m: Mirror.ProductOf[A]) =
      new PrettyString[A] {
        def prettyString(a: A): String = { 
          val label = labelFromMirror[m.MirroredType]
-         val elemLabels = summonElemLabels[m.MirroredElemLabels]
-         val elemInstances = summonInstances[m.MirroredElemTypes]
+         val elemLabels = getElemLabels[m.MirroredElemLabels]
+         val elemInstances = getTypeclassInstances[m.MirroredElemTypes]
          val elems = a.asInstanceOf[Product].productIterator
          val elemStrings = elems.zip(elemLabels).zip(elemInstances).map{
            case ((elem, label), instance) => s"$label=${instance.prettyString(elem)}"
@@ -627,23 +625,10 @@ someVisitors.foreach(prettyPrintln)
 ```
 
 So, i hope you you enjoyed the post. Feel free to ask questions in the comment section or reach out to me 
-on [Twitter](TODO). I'd also want to thank my friends and collegues, that helped me reviewing this post. Also shout-out
-to the Scala community for creating such a great ecosystem and especially to Miles Sabin and Jon Pretty for creating
-awesome generic programming libraries for scala 2 (and 3). Stay healthy you all!
+on [Twitter](TODO). For additional information please consult the [dotty documentation](https://dotty.epfl.ch/docs/index.html)
+and [blog](https://dotty.epfl.ch/blog/index.html). 
 
-<!---
+I'd want to thank my friends and collegues, that helped me reviewing this post. Also shout-out
+to the Scala community for creating such a great ecosystem! 
 
-TODO: shoutout to miles for shapeless, jon for magnolia, library maintainers for scala3 migration, hope overcome split in scala like usa 
-TODO: elements <=> fields
-TODO: reference dotty docs
-TODO: function => method
-TODO: rename summonElemLabels => getElemLabels
-TODO: rename summonInstances => getInstances
-TODO: scala groß
-TODO: derivePrettyString => derivePrettyStringCaseClass
-TODO: explain scala product
-TODO: type level <=> typelevel
-TODO: remove Product subtyping constraint text
-TODO: Hero image - queen with reflection crazy alpaca
-
--->
+Stay healthy you all!
