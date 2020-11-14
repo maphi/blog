@@ -16,7 +16,7 @@ tags:
 
 Scala 3 (previously called [dotty](https://dotty.epfl.ch/)) is approaching its [release](https://dotty.epfl.ch/blog/2020/09/21/naming-schema-change.html)!
 This is a good opportunity to have a deeper look at some new features it offers. For me one of the most exiting
-features are the new metaprogramming abilities that Scala 3 offers. Did you ever wonder how json libraries derive 
+features are the metaprogramming abilities. Did you ever wonder how json libraries derive 
 codecs for you from case classes and sealed traits? Or how tapir generates a whole OpenAPI documentation from your 
 endpoint definitions? In this blog post we will discover how to do things like that in Scala 3 and discover some new 
 language features like given, singleton types, reworked tuples, the exiting new enum definitions and finally the Mirror 
@@ -635,4 +635,6 @@ Stay healthy you all!
 
 <!--
 - check code compiles
+- fix blog search
+- github pages https
 -->
