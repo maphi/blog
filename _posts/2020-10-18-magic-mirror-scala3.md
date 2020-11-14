@@ -24,10 +24,10 @@ trait that allows us to derive typeclass instances automatically for our data ty
 yet, don't be afraid. We will dive into them step by step. Even if the concepts of this post are between intermediate
 to advanced level, i will try to explain it so that it is also understandable for people that already got some
 experience with Scala but haven't explored these concepts yet. If there is something you do not understand please don't
-hesitate to [ask](TODO).    
+hesitate to ask in the comment section below or DM me on [twitter](https://twitter.com/maphiFP).    
 
 But before we start let me tell you the tale of princess Dotty. For the impatient reader: You can skip the tale by
-clicking [here](TODO). 
+clicking [here](#concepts).
 
 ## Princess Dotty, Sir Jon and the Queen of Reflection
 
@@ -384,7 +384,7 @@ println(userPrettyString.prettyString(User("Bob", 25))) // prints User(name="Bob
 
 Awesome! In the snippet above we simply let the compiler assemble the typeclass for our `User` type. This would also
 work for any other case class as long as all individual elements have the respective `given` instances defined (like
-the ones we defined [above](TODO) for `String` and `Int` to create the typeclass instance for `User`). 
+the ones we defined [above](#implicits-30---give-it-use-it-quick-enjoy-it) for `String` and `Int` to create the typeclass instance for `User`). 
 
 It will also work for nested case classes as soon as we make the derivation itself a `given`. But let's first take a
 look at how to handle sealed traits. We can use the same methods as before to extract information but we would need to 
@@ -457,23 +457,23 @@ parantheses. Let's quickly fix that:
 
 ```scala
 inline def derivePrettyStringCaseClass[A](using m: Mirror.ProductOf[A]) =
-     new PrettyString[A] {
-       def prettyString(a: A): String = { 
-         val label = labelFromMirror[m.MirroredType]
-         val elemLabels = getElemLabels[m.MirroredElemLabels]
-         val elemInstances = getTypeclassInstances[m.MirroredElemTypes]
-         val elems = a.asInstanceOf[Product].productIterator
-         val elemStrings = elems.zip(elemLabels).zip(elemInstances).map{
-           case ((elem, label), instance) => s"$label=${instance.prettyString(elem)}"
-         }     
-         // TODO: highlight
-         if (elemLabels.isEmpty) { // check if this is a case object (or parameterless case class)
-           label
-         } else {
-           s"$label(${elemStrings.mkString(", ")})"
-         }
-       }
-     }
+  new PrettyString[A] {
+    def prettyString(a: A): String = { 
+      val label = labelFromMirror[m.MirroredType]
+      val elemLabels = getElemLabels[m.MirroredElemLabels]
+      val elemInstances = getTypeclassInstances[m.MirroredElemTypes]
+      val elems = a.asInstanceOf[Product].productIterator
+      val elemStrings = elems.zip(elemLabels).zip(elemInstances).map{
+        case ((elem, label), instance) => s"$label=${instance.prettyString(elem)}"
+      }
+  
+      if (elemLabels.isEmpty) { // check if this is a case object (or parameterless case class)
+        label
+      } else {
+        s"$label(${elemStrings.mkString(", ")})"
+      }
+    }
+  }
 ```
 
 Now our derived instance will print "AnonymousVisitor" without the parantheses! If you want to have the best experience
@@ -625,10 +625,14 @@ someVisitors.foreach(prettyPrintln)
 ```
 
 So, i hope you you enjoyed the post. Feel free to ask questions in the comment section or reach out to me 
-on [Twitter](TODO). For additional information please consult the [dotty documentation](https://dotty.epfl.ch/docs/index.html)
+on [Twitter](https://twitter.com/maphiFP). For additional information please consult the [dotty documentation](https://dotty.epfl.ch/docs/index.html)
 and [blog](https://dotty.epfl.ch/blog/index.html). 
 
 I'd want to thank my friends and collegues, that helped me reviewing this post. Also shout-out
 to the Scala community for creating such a great ecosystem! 
 
 Stay healthy you all!
+
+<!--
+- check code compiles
+-->
