@@ -1,5 +1,5 @@
 ---
-title: "Mirror, mirror on the Wall, Who's the Genericioust of Them All? - Generic Programming with Scala 3" 
+title: "Mirror, Mirror on the Wall, Who's the Genericioust of Them All? - Generic Programming with Scala 3" 
 date: 2020-10-18T14:00:00+02:00
 categories:
   - blog
@@ -33,7 +33,7 @@ clicking [here](#concepts).
 
 Once upon a time in the land of Scala there lived a brave knight. His name was Sir Jon, but most people just called him [The Pretty](https://twitter.com/propensive). 
 He was the defender of a poor folk which called itself "The Types". Many years ago they were abducted from the kingdom of
-[Compiletime](https://dotty.epfl.ch/docs/reference/metaprogramming/inline.html#the-scalacompiletime-package)
+[Compile time](https://dotty.epfl.ch/docs/reference/metaprogramming/inline.html#the-scalacompiletime-package)
 by the evil Queen of Reflection. The queen ruled with terrible harshness. Everyone who tried to flee 
 from her frightening reign would be thrown into the river of Runtime, that flowed into the great log pool, to never be
 seen again. 
@@ -46,8 +46,8 @@ he built the library [Magnolia](https://github.com/propensive/magnolia). From th
 around the community of types, that came to learn at his [zone](https://scala.zone/). He would teach each Type how to 
 `summon` their birth-`given` instance to defend themselves from the queen's army.
 
-But the queen became aware of Jons plan to start a revolution and she casted a curse on the land that would 
-terribly slow down any Type trying to summon its instance, which caused lots of compiletime. When Jon became aware of 
+But the queen became aware of Jon's plan to start a revolution and she casted a curse on the land that would 
+terribly slow down any Type trying to summon its instance, which caused lots of compile time. When Jon became aware of 
 the curse he desperately began to search for a cure. He asked his old friend the wizard M'acro for help, that was a 
 skilled witcher and wise man, but the reign of the queen had exhausted his power, and he was approaching his
 [last days in the 2nd age]((http://dotty.epfl.ch/docs/reference/dropped-features/macros.html)) of Scala. 
@@ -76,7 +76,7 @@ imprisoned the queen in a [trifold IO-Monad](https://zio.dev/) guarded by the my
 side effects. 
 
 When they heard of Dotty's and Jon's victory over the queen the Types started dancing and went on a march back to the
-kingdom of Compiletime. But as they approached the border, they realized that the land had dried over time. 
+kingdom of Compile time. But as they approached the border, they realized that the land had dried over time. 
 They started searching for the [stream](https://fs2.io/) that had once fed them and the 
 [Alp](https://doc.akka.io/docs/alpakka/current/index.html) [akkas](https://akka.io/) nearby. 
 
@@ -91,7 +91,7 @@ You need to release the river of Runtime to flow through the kingdom to enter th
 "Yeah, sure!" said Sir Jon and laughed. "Why didn't we think of this?". 
 
 The Types then went to the old dam that held
-back the river of runtime and it released its refreshing energy into the kingdom of Compiletime. After that Dotty freed
+back the river of runtime and it released its refreshing energy into the kingdom of Compile time. After that Dotty freed
 the queen and they celebrated a big party with Jon and the Types where they ate many
 [burritos](https://emorehouse.wescreates.wesleyan.edu/silliness/burrito_monads.pdf). Dotty had finally 
 [unioned](http://dotty.epfl.ch/docs/reference/new-types/union-types.html) all Types under the Queen of Mirrors
@@ -187,11 +187,11 @@ corresponding counterpart at type-level which is written exactly in the same way
 `val myInt: 2 = 1` that would not compile. It also works with strings: 
 `val helloWorld: "Hello world!" = "Hello world!"`.
 
-These type-level representations of literals tend to become really helpful for things that are done at compiletime. E.g.
-they would allow us to create matrices of a known size and check at compiletime that they are multipliable. Illegal
+These type-level representations of literals tend to become really helpful for things that are done at compile time. E.g.
+they would allow us to create matrices of a known size and check at compile time that they are multipliable. Illegal
 operations would simply not compile at all. 
 
-Literal types also allow us to bringt literals from type-level to value-level which will be important in the next step.
+Literal types also allow us to bring literals from type-level to value-level which will be important in the next step.
 
 So let's quickly recap what we've discovered so far: We've learned that using typeclasses we can implement additional 
 functionality for each type. We can then use the typeclass instances and implicitly pass them to methods via `given` 
@@ -232,7 +232,7 @@ sealed trait Mirror {
 ```
 
 Ok, that's a lot of types. The first thing to not here is that the `Mirror` trait is providing *type-level* information
-only. Which makes sense, as the derivation of typeclasses happens at compiletime.
+only. Which makes sense, as the derivation of typeclasses happens at compile time.
 
 So what do the different types mean and how do they look for our `User` case class?
 
@@ -292,7 +292,7 @@ println(labelFromMirror[User]) // prints User
 
 This was pretty easy. We just pass our `labelFromMirror` the mirror as an argument and it will use the `constValue` 
 method that we discussed before to summon the value from the type-level. The keyword `inline` is needed here because
-the compiler needs to resolve `constValue` statically and inline it at compiletime which the keyword makes
+the compiler needs to resolve `constValue` statically and inline it at compile time which the keyword makes
 possible. 
 
 Summoning the element labels is a little bit more tricky. As it is a tuple we need to deconstruct it step by step
@@ -321,7 +321,7 @@ In terms of automatic derivation the Scala compiler is just a hungry alpaca in t
 ehm ... whatever. Let's not get distracted. 
 
 The most interesting thing here is the trick with the `erasedValue` method. It allows us to create a **virtual** 
-instance of the type `A` and match on it. Virtual means that this is done at compiletime and there is no actual value 
+instance of the type `A` and match on it. Virtual means that this is done at compile time and there is no actual value 
 to be matched on at runtime. It is just resolved statically by the compiler looking only at the types. This allows us to
 deconstruct the tuple step by step during compilation.
 
@@ -351,7 +351,7 @@ This is very similar to the `getElemLabels` method. It recurses through the elem
 respective typeclass instances for the individual elements. The method `summon` was introduced in dotty to clean up with
 the different meanings of implicits in Scala 2. In Scala 3 typeclass instances no longer use `implicit` as keyword but 
 `given` instead. And the method to fetch the instance is called `summon` and does the exact same things as `implicitly`
-did in Scala 2. And of couse it needs to be inlined again, so we need to use not `summon` but `summonInline`. 
+did in Scala 2. And of course it needs to be inlined again, so we need to use not `summon` but `summonInline`. 
 Right now we got all the information in place that we need for the generic derivation. Let's implement it:
 
 ```scala
@@ -450,10 +450,10 @@ visitors.foreach(visitor =>
 // AnonymousVisitor()  
 ```
 
-Ok fine, but wait! Where are these parantheses behind "AnonymousVisitor" coming from? This is because `AnonymousVisitor`
-is a case object which the compiler treates as a case class with zero fields. So in the derivation process
+Ok fine, but wait! Where are these parentheses behind "AnonymousVisitor" coming from? This is because `AnonymousVisitor`
+is a case object which the compiler treats as a case class with zero fields. So in the derivation process
 for `AnonymousVisitor` it will create an instance for a case class, that as we defined it above prints also the 
-parantheses. Let's quickly fix that:
+parentheses. Let's quickly fix that:
 
 ```scala
 inline def derivePrettyStringCaseClass[A](using m: Mirror.ProductOf[A]) =
@@ -476,7 +476,7 @@ inline def derivePrettyStringCaseClass[A](using m: Mirror.ProductOf[A]) =
   }
 ```
 
-Now our derived instance will print "AnonymousVisitor" without the parantheses! If you want to have the best experience
+Now our derived instance will print "AnonymousVisitor" without the parentheses! If you want to have the best experience
 when using automated derivation you should put the `derived` method in the companion object of your typeclass. After 
 doing that you can easily have an instance created automatically by writing:
 
@@ -628,13 +628,7 @@ So, i hope you you enjoyed the post. Feel free to ask questions in the comment s
 on [Twitter](https://twitter.com/maphiFP). For additional information please consult the [dotty documentation](https://dotty.epfl.ch/docs/index.html)
 and [blog](https://dotty.epfl.ch/blog/index.html). 
 
-I'd want to thank my friends and collegues, that helped me reviewing this post. Also shout-out
+I'd want to thank my friends and colleagues, that helped me to review this post. Also shout-out
 to the Scala community for creating such a great ecosystem! 
 
 Stay healthy you all!
-
-<!--
-- check code compiles
-- fix blog search
-- github pages https
--->
