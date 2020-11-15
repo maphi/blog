@@ -625,10 +625,10 @@ someVisitors.foreach(prettyPrintln)
 ```
 
 So, i hope you you enjoyed the post. Feel free to ask questions in the comment section or reach out to me 
-on [Twitter](https://twitter.com/maphiFP). For additional information please consult the [dotty documentation](https://dotty.epfl.ch/docs/index.html)
+on [twitter](https://twitter.com/maphiFP). For additional information please consult the [dotty documentation](https://dotty.epfl.ch/docs/index.html)
 and [blog](https://dotty.epfl.ch/blog/index.html). 
 
 I'd want to thank my friends and colleagues, that helped me to review this post. Also shout-out
 to the Scala community for creating such a great ecosystem! 
 
-Stay healthy you all!
+Stay healthy you all and follow me on [twitter](https://twitter.com/maphiFP) to keep up with further posts.
