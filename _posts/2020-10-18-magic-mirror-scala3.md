@@ -15,11 +15,11 @@ tags:
 </style> 
 
 Scala 3 (previously called [dotty](https://dotty.epfl.ch/)) is approaching its [release](https://dotty.epfl.ch/blog/2020/09/21/naming-schema-change.html)!
-This is a good opportunity to have a deeper look at some new features it offers. For me one of the most exiting
-features are the metaprogramming abilities. Did you ever wonder how json libraries derive 
-codecs for you from case classes and sealed traits? Or how tapir generates a whole OpenAPI documentation from your 
+This is a good opportunity to have a deeper look at some new features it offers. For me one of the most exciting
+features are the metaprogramming abilities. Did you ever wonder how JSON libraries like [circe](https://circe.github.io/circe/) derive 
+codecs for you from case classes and sealed traits? Or how [tapir](https://tapir.softwaremill.com/en/latest/) generates a whole OpenAPI documentation from your 
 endpoint definitions? In this blog post we will discover how to do things like that in Scala 3 and discover some new 
-language features like given, singleton types, reworked tuples, the exiting new enum definitions and finally the Mirror 
+language features like the given keyword, literal types, reworked tuples, the exciting new enum definitions and finally the Mirror 
 trait that allows us to derive typeclass instances automatically for our data types. If you haven't heard of these things
 yet, don't be afraid. We will dive into them step by step. Even if the concepts of this post are between intermediate
 to advanced level, i will try to explain it so that it is also understandable for people that already got some
